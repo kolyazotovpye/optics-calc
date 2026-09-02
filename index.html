@@ -105,6 +105,17 @@
   .illus { padding: 14px 16px 10px; }
   .illus svg { width: 100%; height: auto; display: block; }
 
+  .warn-red {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    background: #d94a3d;
+    border-radius: 8px;
+    text-align: center;
+    padding: 11px 16px;
+    margin-bottom: 10px;
+  }
+
   .col-label {
     font-size: 11px;
     color: #999;
@@ -395,6 +406,8 @@
       <p class="note" id="d-note"></p>
     </div>
 
+    <p class="warn-red" id="d-warn" hidden>Для плюсовой коррекции могут быть проблемы с доступными вариантами</p>
+
     <p class="foot">+1 мм — технологический припуск</p>
   </div>
 </div>
@@ -491,9 +504,14 @@ function updateDiameter() {
   const c = parseFloat(val('d-dbc'));   // межцентровое оправы
   const p = parseFloat(val('d-pd'));    // межзрачковое пациента
   const o = parseFloat(val('d-opening')); // наибольший размер проёма
-  if (isNaN(c) || isNaN(p) || isNaN(o)) { setResult('d-result', '—'); return; }
+  if (isNaN(c) || isNaN(p) || isNaN(o)) {
+    setResult('d-result', '—');
+    document.getElementById('d-warn').hidden = true;
+    return;
+  }
   const dia = c - p + o + 1;
   setResult('d-result', dia.toFixed(1));
+  document.getElementById('d-warn').hidden = !(dia > 71);
 }
 
 /* ---------- Общее ---------- */
