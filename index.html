@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Оптические калькуляторы</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  h1 {
+    font-size: 17px;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: #ececea;
+    padding: 3px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #888;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .tab.active {
+    background: #fff;
+    color: #1a1a1a;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: #fff;
+    border: 0.5px solid #e0e0db;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+  }
+
+  .grid, .grid-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .grid-header { margin-bottom: 8px; }
+  .grid { margin-bottom: 8px; }
+  .grid:last-of-type { margin-bottom: 0; }
+
+  /* 4-колоночная сетка для транспозиции: метка + SPH + CYL + AX */
+  .t-grid { grid-template-columns: 40px 1fr 1fr 1fr; }
+
+  /* сетка диаметра: 3 ввода + результат, без колонки глаза */
+  .d-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .illus { padding: 14px 16px 10px; }
+  .illus svg { width: 100%; height: auto; display: block; }
+
+  .col-label {
+    font-size: 11px;
+    color: #999;
+    text-align: center;
+  }
+
+  .eye {
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+  }
+
+  .eye.arrow {
+    color: #bbb;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  input[type=number], select {
+    width: 100%;
+    padding: 7px 6px;
+    font-size: 14px;
+    text-align: center;
+    border: 0.5px solid #ddd;
+    border-radius: 8px;
+    background: #fafaf8;
+    color: #1a1a1a;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: inherit;
+  }
+
+  input[type=number]:focus, select:focus {
+    border-color: #aaa;
+    background: #fff;
+  }
+
+  input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+
+  select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23aaa'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 22px;
+  }
+
+  .result {
+    background: #f0f0ec;
+    border-radius: 8px;
+    padding: 7px 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+    text-align: center;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .result.highlight {
+    background: #e6f1fb;
+    color: #185fa5;
+  }
+
+  .row-gap { height: 12px; }
+
+  .note {
+    font-size: 12px;
+    color: #e8a020;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 0.5px solid #eee;
+    min-height: 0;
+  }
+
+  .rule {
+    font-size: 13px;
+    font-weight: 500;
+    color: #b07800;
+    background: #fff8e6;
+    border: 0.5px solid #f0d080;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 10px;
+    padding: 10px 16px;
+  }
+
+  .foot {
+    font-size: 12px;
+    color: #aaa;
+    font-style: italic;
+    text-align: center;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Оптические калькуляторы</h1>
+
+  <div class="tabs">
+    <button class="tab active" data-target="panel-prism">corPD</button>
+    <button class="tab" data-target="panel-transpose">Транспозиция</button>
+    <button class="tab" data-target="panel-diameter">Диаметр</button>
+  </div>
+
+  <!-- ВКЛАДКА 1: ПРИЗМА -->
+  <div class="panel active" id="panel-prism">
+    <p class="rule">Если призма &lt; 2.0 пр.дптр — смещением можно пренебречь</p>
+
+    <div class="card">
+      <p class="section-title">Горизонтальная призма</p>
+      <div class="grid-header">
+        <div></div>
+        <div class="col-label">Prism</div>
+        <div class="col-label">Base</div>
+        <div class="col-label">Dpp (мм)</div>
+        <div class="col-label">corPD</div>
+      </div>
+      <div class="grid">
+        <span class="eye">OD</span>
+        <input type="number" id="h-prism-od" min="0" step="0.25" placeholder="0">
+        <select id="h-base-od"><option value="BO">BO</option><option value="BI">BI</option></select>
+        <input type="number" id="h-dpp-od" min="0" step="0.5" placeholder="33">
+        <div class="result" id="h-result-od">—</div>
+      </div>
+      <div class="grid">
+        <span class="eye">OS</span>
+        <input type="number" id="h-prism-os" min="0" step="0.25" placeholder="0">
+        <select id="h-base-os"><option value="BO">BO</option><option value="BI">BI</option></select>
+        <input type="number" id="h-dpp-os" min="0" step="0.5" placeholder="33">
+        <div class="result" id="h-result-os">—</div>
+      </div>
+      <p class="note" id="h-note"></p>
+    </div>
+
+    <div class="card">
+      <p class="section-title">Вертикальная призма</p>
+      <div class="grid-header">
+        <div></div>
+        <div class="col-label">Prism</div>
+        <div class="col-label">Base</div>
+        <div class="col-label">HV (мм)</div>
+        <div class="col-label">corHV</div>
+      </div>
+      <div class="grid">
+        <span class="eye">OD</span>
+        <input type="number" id="v-prism-od" min="0" step="0.25" placeholder="0">
+        <select id="v-base-od"><option value="BU">BU</option><option value="BD">BD</option></select>
+        <input type="number" id="v-hv-od" min="0" step="0.5" placeholder="26">
+        <div class="result" id="v-result-od">—</div>
+      </div>
+      <div class="grid">
+        <span class="eye">OS</span>
+        <input type="number" id="v-prism-os" min="0" step="0.25" placeholder="0">
+        <select id="v-base-os"><option value="BU">BU</option><option value="BD">BD</option></select>
+        <input type="number" id="v-hv-os" min="0" step="0.5" placeholder="26">
+        <div class="result" id="v-result-os">—</div>
+      </div>
+      <p class="note" id="v-note"></p>
+    </div>
+
+    <p class="foot">автоматическое округление до 0.5 в сторону исходного значения</p>
+  </div>
+
+  <!-- ВКЛАДКА 2: ТРАНСПОЗИЦИЯ -->
+  <div class="panel" id="panel-transpose">
+    <p class="rule">Транспозиция меняет только запись — оптическая сила линзы не меняется</p>
+
+    <div class="card">
+      <p class="section-title">Пересчёт рецепта</p>
+      <div class="grid-header t-grid">
+        <div></div>
+        <div class="col-label">SPH</div>
+        <div class="col-label">CYL</div>
+        <div class="col-label">AX</div>
+      </div>
+
+      <div class="grid t-grid">
+        <span class="eye">OD</span>
+        <input type="number" id="t-sph-od" step="0.25" placeholder="0.00">
+        <input type="number" id="t-cyl-od" step="0.25" placeholder="0.00">
+        <input type="number" id="t-ax-od" min="0" max="180" step="1" placeholder="0">
+      </div>
+      <div class="grid t-grid">
+        <span class="eye arrow">↓</span>
+        <div class="result" id="t-rsph-od">—</div>
+        <div class="result" id="t-rcyl-od">—</div>
+        <div class="result" id="t-rax-od">—</div>
+      </div>
+
+      <div class="row-gap"></div>
+
+      <div class="grid t-grid">
+        <span class="eye">OS</span>
+        <input type="number" id="t-sph-os" step="0.25" placeholder="0.00">
+        <input type="number" id="t-cyl-os" step="0.25" placeholder="0.00">
+        <input type="number" id="t-ax-os" min="0" max="180" step="1" placeholder="0">
+      </div>
+      <div class="grid t-grid">
+        <span class="eye arrow">↓</span>
+        <div class="result" id="t-rsph-os">—</div>
+        <div class="result" id="t-rcyl-os">—</div>
+        <div class="result" id="t-rax-os">—</div>
+      </div>
+
+      <p class="note" id="t-note"></p>
+    </div>
+
+    <p class="foot">Cyl меняет знак · Sph = Sph + Cyl · ось ±90°</p>
+  </div>
+
+  <!-- ВКЛАДКА 3: ДИАМЕТР -->
+  <div class="panel" id="panel-diameter">
+    <p class="rule">Диаметр = межцентровое − межзрачковое + наибольший размер проёма + 1 мм</p>
+
+    <div class="card illus">
+      <svg id="_Слой_2" data-name="Слой 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 736.86 275.8" role="img" aria-label="Схема оправы: межцентровое расстояние и наибольший размер проёма">
+        <defs>
+          <style>
+            .cls-1 { fill: #231300; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 13px; }
+            .cls-2 { stroke: #000; }
+            .cls-2, .cls-3, .cls-4, .cls-5, .cls-6 { stroke-linecap: round; stroke-linejoin: round; }
+            .cls-2, .cls-3, .cls-4, .cls-6 { fill: none; }
+            .cls-2, .cls-4 { stroke-width: .23px; }
+            .cls-3 { stroke: #f24942; stroke-width: 2px; }
+            .cls-4, .cls-5, .cls-6 { stroke: #4c433f; }
+            .cls-5 { fill: #817f7e; }
+            .cls-5, .cls-6 { stroke-width: 1.88px; }
+            .cls-9 { fill: #f24942; }
+          </style>
+        </defs>
+        <g id="_Слой_1-2" data-name="Слой 1">
+          <g>
+            <line class="cls-2" x1="261.02" y1="251.47" x2="260.23" y2="251.97"/>
+            <line class="cls-2" x1="262.48" y1="250.51" x2="261.09" y2="251.41"/>
+            <line class="cls-4" x1="254.58" y1="238.54" x2="252.44" y2="240"/>
+            <line class="cls-4" x1="315.62" y1="184.6" x2="316.52" y2="182.12"/>
+            <line class="cls-4" x1="298.92" y1="178.96" x2="299.83" y2="176.37"/>
+            <path class="cls-5" d="M335.49,115.22l-1.02-2.6-5.08-9.03c-1.77-3.91-1.17-7.15.87-9.82l-7.07-29.54-1.24.77c-8.69,4.61-13.61-2.37-21.33-6.21l-10.04-6.32-4.17-2.6-4.29-2.37-7-3.27-7-2.82-7.33-2.48-7.33-1.92-11.17-2.48c-18.56-3.44-37.99-5.68-56.87-5.64l-11.51.11-12.64.68-12.52,1.02-12.64,1.35-12.52,1.81-11.73,2.03-11.62,2.48-16.25,3.84-16.13,4.29-15.46,3.95-15.57,3.61-15.57,3.27-15.68,2.93-1.47.45-1.35.9-1.02,1.13-.56,1.47-.23,1.47v23.47l.23,1.58.68,1.47,1.02,1.13,1.24.9,1.47.45,3.95.79c11.64,3.03,21.33,12.49,24.71,24.03l.9,3.84,2.82,17.6,3.27,17.49,3.95,17.38,2.14,8.46,2.6,8.24,3.05,8.24,2.93,7.11,3.38,6.88,3.84,6.77,4.17,6.54,4.29,5.98,4.74,5.64,4.06,4.51,4.51,4.17,4.85,3.72,5.08,3.5,5.3,2.93,7.11,3.5,7.33,3.05,7.45,2.6,7.67,2.26,7.67,1.69,7.79,1.35,9.7,1.02c19.26,1.88,38.76.68,57.77-2.93l9.48-2.14,6.77-1.92c11.92-3.65,22.32-8.76,32.16-15.51.02-.02.06-.04.08-.06,3.57-2.43,7.07-5.12,10.53-8.01l5.19-4.74,6.32-6.54,6.09-6.88,5.64-7.22,5.3-7.45,5.75-9.14c12.67-21.57,22.6-45.68,27.76-70.18l2.14-10.61.11-2.71-.45-2.71ZM37.95,86.56l-.56,1.24c-2.2,3.03-6.68,2.29-7.79-1.24l-.23-1.35.23-1.35c1.11-3.46,5.53-4.06,7.79-1.24l.56,1.24.23,1.35-.23,1.35ZM37.95,70.99l-.56,1.24c-1.97,2.8-6.9,2.22-7.79-1.24l-.23-1.35.23-1.35c.88-3.48,5.81-4.06,7.79-1.24l.56,1.24.23,1.35-.23,1.35ZM298.93,178.75l-3.16,7.45-3.5,7.33-3.84,7.11-4.29,6.88c-12.34,18.88-30.69,34.47-51.45,43.33l-7,2.48-7.11,2.14c-23.96,6-49.1,6.85-73.45,2.93l-9.14-1.69-8.12-2.14-7.9-2.6-7.79-3.16-5.3-2.71-5.08-3.16-4.85-3.61-4.4-3.95c-17.23-16.3-27.12-39.51-32.95-62.06l-2.37-10.49-1.35-8.24c-2.8-20.27-1.97-42.99,3.5-62.73l1.81-4.74,2.14-4.51,2.71-4.29,3.05-4.06c14.01-16.61,36.33-21.96,56.64-26.18l11.28-2.14,11.28-1.58c30.6-3.72,60.67-2.69,90.94,3.16l11.17,2.37,6.54,1.81,6.54,2.14,6.32,2.6,6.21,2.93,4.74,2.6c14.01,8.67,24.33,20.18,27.87,36.67l.9,5.08.68,7.79c.88,21.23-4.01,47.28-11.28,67.25Z"/>
+            <path class="cls-6" d="M298.93,178.75l-3.16,7.45-3.5,7.33-3.84,7.11-4.29,6.88c-12.34,18.88-30.69,34.47-51.45,43.33l-7,2.48-7.11,2.14c-23.96,6-49.1,6.85-73.45,2.93l-9.14-1.69-8.12-2.14-7.9-2.6-7.79-3.16-5.3-2.71-5.08-3.16-4.85-3.61-4.4-3.95c-17.23-16.3-27.12-39.51-32.95-62.06l-2.37-10.49-1.35-8.24c-2.8-20.27-1.97-42.99,3.5-62.73l1.81-4.74,2.14-4.51,2.71-4.29,3.05-4.06c14.01-16.61,36.33-21.96,56.64-26.18l11.28-2.14,11.28-1.58c30.6-3.72,60.67-2.69,90.94,3.16l11.17,2.37,6.54,1.81,6.54,2.14,6.32,2.6,6.21,2.93,4.74,2.6c14.01,8.67,24.33,20.18,27.87,36.67l.9,5.08.68,7.79c.88,21.23-4.01,47.28-11.28,67.25Z"/>
+            <line class="cls-6" x1="413.79" y1="64.22" x2="413.77" y2="64.26"/>
+            <line class="cls-6" x1="330.29" y1="93.9" x2="330.26" y2="93.78"/>
+            <line class="cls-6" x1="323.19" y1="64.24" x2="323.19" y2="64.22"/>
+            <path class="cls-5" d="M735.7,64.22l-.56-1.47-1.02-1.13-1.24-.9-1.47-.45-15.68-2.93-15.68-3.27-15.57-3.61-15.46-3.95-16.13-4.29-16.25-3.84c-27.27-6.24-57.13-9.48-85.07-9.48l-11.51.23-11.4.79c-24.88,2.41-51.32,5.94-73.79,17.6l-4.4,2.37-4.17,2.6-9.93,6.32-10.15,6.21-2.14.9-2.37.56h-2.26l-2.26-.56-2.14-.9-1.26-.75-7.2,29.64,1.13,1.69.79,1.92.11,2.14-.23,2.03-.79,1.92-5.19,9.03-1.02,2.6-.45,2.71.11,2.71,2.14,10.61,2.6,10.49,3.05,10.38,3.5,10.27,3.95,10.04,4.51,9.93,4.85,9.59,5.42,9.48,5.75,9.14,5.19,7.45,5.64,7.22c18.18,21.87,39.38,36.67,67.13,43.67l9.48,2.14,9.59,1.58,9.59,1.24,9.7.68c31.57,1.47,61.42-2.8,89.02-18.96l5.08-3.5,4.74-3.72c21.14-18.75,33.3-45.53,39.83-72.55l3.84-17.38,3.38-17.49,2.71-17.6.9-3.84c3.87-11.94,12.6-20.61,24.71-24.03l3.95-.79,1.47-.45,1.35-.9,1.02-1.13.56-1.47.23-1.58v-23.47l-.23-1.47ZM680.97,154.6l-1.35,8.24-2.37,10.49-2.93,10.38-3.05,8.69-3.5,8.46-3.95,8.35-3.27,5.75-3.5,5.42-3.95,5.3-4.17,4.96-4.51,4.74-4.51,3.95-4.74,3.61-5.08,3.16-5.42,2.71-7.67,3.16-8.01,2.6-8.12,2.14-9.03,1.69c-21.72,3.42-42.93,3.18-64.54-.9l-9.03-2.03-7.11-2.14-6.88-2.48-6.77-3.16-6.43-3.5-6.43-4.17c-10.72-7.3-19.73-15.97-27.53-26.29l-4.4-6.21-4.29-6.88c-6.73-11.72-11.87-24.18-15.35-37.23l-1.81-7.9-1.92-10.38-1.69-10.38-.79-7.67-.34-7.79.23-7.79.56-7.79.9-5.08c1.73-8.41,5.83-16.53,11.4-23.02l3.61-3.72,4.06-3.61,4.29-3.38,4.51-2.93,4.74-2.6,6.21-2.93,6.32-2.6,6.54-2.14,6.54-1.81,11.17-2.37c41.24-8.01,83.87-7,124.68,3.05l10.94,2.93,6.21,2.03,5.87,2.48,5.75,2.93,5.53,3.27,4.06,3.05c8.01,6.56,13.73,14.65,16.81,24.6l1.35,4.85,1.58,8.24c2.54,15.89,2.97,33.72.56,49.65ZM707.38,86.56l-.68,1.24c-2.2,3.03-6.68,2.29-7.79-1.24l-.23-1.35.23-1.35c1.11-3.46,5.53-4.06,7.79-1.24l.68,1.24.11,1.35-.11,1.35ZM707.26,70.99l-.56,1.24c-1.97,2.8-6.9,2.22-7.79-1.24l-.23-1.35.23-1.35c.88-3.48,5.81-4.06,7.79-1.24l.56,1.24.23,1.35-.23,1.35Z"/>
+            <path class="cls-6" d="M680.97,154.6l-1.35,8.24-2.37,10.49-2.93,10.38-3.05,8.69-3.5,8.46-3.95,8.35-3.27,5.75-3.5,5.42-3.95,5.3-4.17,4.96-4.51,4.74-4.51,3.95-4.74,3.61-5.08,3.16-5.42,2.71-7.67,3.16-8.01,2.6-8.12,2.14-9.03,1.69c-21.72,3.42-42.93,3.18-64.54-.9l-9.03-2.03-7.11-2.14-6.88-2.48-6.77-3.16-6.43-3.5-6.43-4.17c-10.72-7.3-19.73-15.97-27.53-26.29l-4.4-6.21-4.29-6.88c-6.73-11.72-11.87-24.18-15.35-37.23l-1.81-7.9-1.92-10.38-1.69-10.38-.79-7.67-.34-7.79.23-7.79.56-7.79.9-5.08c1.73-8.41,5.83-16.53,11.4-23.02l3.61-3.72,4.06-3.61,4.29-3.38,4.51-2.93,4.74-2.6,6.21-2.93,6.32-2.6,6.54-2.14,6.54-1.81,11.17-2.37c41.24-8.01,83.87-7,124.68,3.05l10.94,2.93,6.21,2.03,5.87,2.48,5.75,2.93,5.53,3.27,4.06,3.05c8.01,6.56,13.73,14.65,16.81,24.6l1.35,4.85,1.58,8.24c2.54,15.89,2.97,33.72.56,49.65Z"/>
+            <path class="cls-5" d="M413.77,64.26l-7.2,29.64-2.03-2.14-2.26-1.81-2.48-1.47-2.6-1.13-5.64-1.81-5.64-1.47-5.75-1.02-5.87-.68-5.87-.23-5.87.23c-6.79.49-26.16,3.31-32.31,11.4l-7.07-29.54,4.85-2.95,2.03-.9,2.26-.23h72.21l2.26.23,2.03.9,4.95,2.97Z"/>
+            <path class="cls-2" d="M707.49,69.64l-.23,1.35-.56,1.24c-1.97,2.8-6.9,2.22-7.79-1.24l-.23-1.35.23-1.35c.88-3.48,5.81-4.06,7.79-1.24l.56,1.24.23,1.35Z"/>
+            <path class="cls-2" d="M707.49,85.21l-.11,1.35-.68,1.24c-2.2,3.03-6.68,2.29-7.79-1.24l-.23-1.35.23-1.35c1.11-3.46,5.53-4.06,7.79-1.24l.68,1.24.11,1.35Z"/>
+            <path class="cls-2" d="M38.17,69.64l-.23,1.35-.56,1.24c-1.97,2.8-6.9,2.22-7.79-1.24l-.23-1.35.23-1.35c.88-3.48,5.81-4.06,7.79-1.24l.56,1.24.23,1.35Z"/>
+            <path class="cls-2" d="M38.17,85.21l-.23,1.35-.56,1.24c-2.2,3.03-6.68,2.29-7.79-1.24l-.23-1.35.23-1.35c1.11-3.46,5.53-4.06,7.79-1.24l.56,1.24.23,1.35Z"/>
+          </g>
+          <line class="cls-3" x1="54.32" y1="1.47" x2="54.32" y2="168.49"/>
+          <line class="cls-3" x1="426.54" y1="1.47" x2="426.54" y2="168.49"/>
+          <g>
+            <line class="cls-3" x1="72.04" y1="15.88" x2="408.82" y2="15.88"/>
+            <polygon class="cls-9" points="76 21.69 54.32 15.88 76 10.07 76 21.69"/>
+            <polygon class="cls-9" points="404.86 21.69 426.54 15.88 404.86 10.07 404.86 21.69"/>
+          </g>
+          <g>
+            <line class="cls-3" x1="448.69" y1="93.65" x2="648.21" y2="200.83"/>
+            <polygon class="cls-9" points="449.43 100.64 433.08 85.26 454.93 90.41 449.43 100.64"/>
+            <polygon class="cls-9" points="641.97 204.07 663.82 209.21 647.47 193.83 641.97 204.07"/>
+          </g>
+          <text class="cls-1" transform="translate(163.47 10.88)"><tspan x="0" y="0">Межцентровое расстояние</tspan></text>
+          <text class="cls-1" transform="translate(481.14 103.48) rotate(28.24)"><tspan x="0" y="0">Наибольший размер проема</tspan></text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="card">
+      <p class="section-title">Минимальный диаметр</p>
+      <div class="grid-header d-grid">
+        <div class="col-label">Межцентр. (мм)</div>
+        <div class="col-label">Межзрач. (мм)</div>
+        <div class="col-label">Проём (мм)</div>
+        <div class="col-label">Диаметр</div>
+      </div>
+      <div class="grid d-grid">
+        <input type="number" id="d-dbc" min="0" step="0.5" placeholder="70">
+        <input type="number" id="d-pd" min="0" step="0.5" placeholder="64">
+        <input type="number" id="d-opening" min="0" step="0.5" placeholder="52">
+        <div class="result" id="d-result">—</div>
+      </div>
+      <p class="note" id="d-note"></p>
+    </div>
+
+    <p class="foot">+1 мм — технологический припуск</p>
+  </div>
+</div>
+
+<script>
+/* ---------- Вкладки ---------- */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.target).classList.add('active');
+  });
+});
+
+/* ---------- Призма ---------- */
+function roundHalf(val, original) {
+  return val < original
+    ? Math.ceil(val * 2) / 2
+    : Math.floor(val * 2) / 2;
+}
+function calcH(prism, base, dpp) {
+  const p = parseFloat(prism), d = parseFloat(dpp);
+  if (isNaN(p) || isNaN(d)) return '—';
+  const dir = base === 'BO' ? -1 : 1;
+  const val = d + p * 0.25 * dir;
+  return roundHalf(val, d).toFixed(1);
+}
+function calcV(prism, base, hv) {
+  const p = parseFloat(prism), h = parseFloat(hv);
+  if (isNaN(p) || isNaN(h)) return '—';
+  const dir = base === 'BU' ? -1 : 1;
+  const val = h + p * 0.25 * dir;
+  return roundHalf(val, h).toFixed(1);
+}
+function setResult(id, val) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.classList.toggle('highlight', val !== '—');
+}
+function warnNote(prismOD, prismOS, noteId) {
+  const od = parseFloat(prismOD), os = parseFloat(prismOS);
+  const low = [];
+  if (!isNaN(od) && od > 0 && od < 2) low.push('OD');
+  if (!isNaN(os) && os > 0 && os < 2) low.push('OS');
+  document.getElementById(noteId).textContent =
+    low.length ? `Призма < 2.0 пр.дптр (${low.join(', ')}) — смещением можно пренебречь` : '';
+}
+function updatePrism() {
+  setResult('h-result-od', calcH(val('h-prism-od'), val('h-base-od'), val('h-dpp-od')));
+  setResult('h-result-os', calcH(val('h-prism-os'), val('h-base-os'), val('h-dpp-os')));
+  setResult('v-result-od', calcV(val('v-prism-od'), val('v-base-od'), val('v-hv-od')));
+  setResult('v-result-os', calcV(val('v-prism-os'), val('v-base-os'), val('v-hv-os')));
+  warnNote(val('h-prism-od'), val('h-prism-os'), 'h-note');
+  warnNote(val('v-prism-od'), val('v-prism-os'), 'v-note');
+}
+
+/* ---------- Транспозиция ---------- */
+function fmtPow(n) {
+  if (n === 0) return '0.00';
+  return (n > 0 ? '+' : '−') + Math.abs(n).toFixed(2);
+}
+function transpose(sph, cyl, ax) {
+  const s = parseFloat(sph), c = parseFloat(cyl), a = parseFloat(ax);
+  if (isNaN(s) || isNaN(c) || isNaN(a)) return null;
+  const nSph = s + c;
+  const nCyl = -c;
+  const nAx = a <= 90 ? a + 90 : a - 90;
+  return { sph: nSph, cyl: nCyl, ax: nAx };
+}
+function updateEye(prefix) {
+  const r = transpose(val('t-sph-' + prefix), val('t-cyl-' + prefix), val('t-ax-' + prefix));
+  if (!r) {
+    setResult('t-rsph-' + prefix, '—');
+    setResult('t-rcyl-' + prefix, '—');
+    setResult('t-rax-' + prefix, '—');
+    return true; // не заполнено — не считаем ошибкой
+  }
+  setResult('t-rsph-' + prefix, fmtPow(r.sph));
+  setResult('t-rcyl-' + prefix, fmtPow(r.cyl));
+  setResult('t-rax-' + prefix, Math.round(r.ax) + '°');
+  const a = parseFloat(val('t-ax-' + prefix));
+  return a >= 0 && a <= 180;
+}
+function updateTranspose() {
+  const okOD = updateEye('od');
+  const okOS = updateEye('os');
+  document.getElementById('t-note').textContent =
+    (okOD && okOS) ? '' : 'Ось должна быть в диапазоне 0–180°';
+}
+
+/* ---------- Диаметр ---------- */
+function updateDiameter() {
+  const c = parseFloat(val('d-dbc'));   // межцентровое оправы
+  const p = parseFloat(val('d-pd'));    // межзрачковое пациента
+  const o = parseFloat(val('d-opening')); // наибольший размер проёма
+  if (isNaN(c) || isNaN(p) || isNaN(o)) { setResult('d-result', '—'); return; }
+  const dia = c - p + o + 1;
+  setResult('d-result', dia.toFixed(1));
+}
+
+/* ---------- Общее ---------- */
+function val(id) { return document.getElementById(id).value; }
+function updateAll() { updatePrism(); updateTranspose(); updateDiameter(); }
+document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', updateAll));
+</script>
+</body>
+</html>
