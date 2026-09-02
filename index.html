@@ -209,13 +209,13 @@
   <h1>Оптические калькуляторы</h1>
 
   <div class="tabs">
-    <button class="tab active" data-target="panel-prism">corPD</button>
-    <button class="tab" data-target="panel-transpose">Транспозиция</button>
+    <button class="tab active" data-target="panel-transpose">Транспозиция</button>
     <button class="tab" data-target="panel-diameter">Диаметр</button>
+    <button class="tab" data-target="panel-prism">corPD</button>
   </div>
 
   <!-- ВКЛАДКА 1: ПРИЗМА -->
-  <div class="panel active" id="panel-prism">
+  <div class="panel" id="panel-prism">
     <p class="rule">Если призма &lt; 2.0 пр.дптр — смещением можно пренебречь</p>
 
     <div class="card">
@@ -274,7 +274,7 @@
   </div>
 
   <!-- ВКЛАДКА 2: ТРАНСПОЗИЦИЯ -->
-  <div class="panel" id="panel-transpose">
+  <div class="panel active" id="panel-transpose">
     <p class="rule">Транспозиция меняет только запись — оптическая сила линзы не меняется</p>
 
     <div class="card">
