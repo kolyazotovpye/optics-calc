@@ -117,6 +117,8 @@
     margin-bottom: 10px;
   }
 
+  .span2 { grid-column: span 2; }
+
   .col-label {
     font-size: 11px;
     color: #999;
@@ -224,6 +226,7 @@
     <button class="tab active" data-target="panel-transpose">Транспозиция</button>
     <button class="tab" data-target="panel-diameter">Диаметр</button>
     <button class="tab" data-target="panel-prism">corPD</button>
+    <button class="tab" data-target="panel-prismres">Рез. призма</button>
   </div>
 
   <!-- ВКЛАДКА 1: ПРИЗМА -->
@@ -411,6 +414,54 @@
 
     <p class="foot">+1 мм — технологический припуск</p>
   </div>
+
+  <!-- ВКЛАДКА 4: РЕЗУЛЬТИРУЮЩАЯ ПРИЗМА -->
+  <div class="panel" id="panel-prismres">
+    <p class="rule">База «out»: правый глаз = 180°, левый = 0° · вверх = 90° · вниз = 270°</p>
+
+    <div class="card">
+      <p class="section-title">Результирующая призма (∆ / °)</p>
+      <div class="grid-header">
+        <div></div>
+        <div class="col-label">Гор. ∆</div>
+        <div class="col-label">База</div>
+        <div class="col-label">Верт. ∆</div>
+        <div class="col-label">База</div>
+      </div>
+
+      <div class="grid">
+        <span class="eye">OD</span>
+        <input type="number" id="pr-hp-od" min="0" step="0.25" placeholder="0">
+        <select id="pr-hb-od"><option value="BO">BO</option><option value="BI">BI</option></select>
+        <input type="number" id="pr-vp-od" min="0" step="0.25" placeholder="0">
+        <select id="pr-vb-od"><option value="BU">BU</option><option value="BD">BD</option></select>
+      </div>
+      <div class="grid">
+        <span class="eye arrow">↓</span>
+        <div class="result span2" id="pr-mag-od">—</div>
+        <div class="result span2" id="pr-ang-od">—</div>
+      </div>
+
+      <div class="row-gap"></div>
+
+      <div class="grid">
+        <span class="eye">OS</span>
+        <input type="number" id="pr-hp-os" min="0" step="0.25" placeholder="0">
+        <select id="pr-hb-os"><option value="BO">BO</option><option value="BI">BI</option></select>
+        <input type="number" id="pr-vp-os" min="0" step="0.25" placeholder="0">
+        <select id="pr-vb-os"><option value="BU">BU</option><option value="BD">BD</option></select>
+      </div>
+      <div class="grid">
+        <span class="eye arrow">↓</span>
+        <div class="result span2" id="pr-mag-os">—</div>
+        <div class="result span2" id="pr-ang-os">—</div>
+      </div>
+
+      <p class="note" id="pr-note"></p>
+    </div>
+
+    <p class="foot">R = √(H² + V²) под углом · для заказа пишите по базам, не углом</p>
+  </div>
 </div>
 
 <script>
@@ -515,9 +566,31 @@ function updateDiameter() {
   document.getElementById('d-warn').hidden = !(dia > 71);
 }
 
+/* ---------- Результирующая призма ---------- */
+function resultantPrism(hP, hBase, vP, vBase, eye) {
+  const h = parseFloat(hP), v = parseFloat(vP);
+  if (isNaN(h) && isNaN(v)) return null;
+  const H = isNaN(h) ? 0 : h, V = isNaN(v) ? 0 : v;
+  // знаковые компоненты в мат. плоскости: правый глаз BO=180°, левый BO=0°; вверх=90°, вниз=270°
+  const hx = (eye === 'od') ? (hBase === 'BO' ? -H : H) : (hBase === 'BO' ? H : -H);
+  const vy = (vBase === 'BU') ? V : -V;
+  const mag = Math.sqrt(H * H + V * V);
+  let ang = Math.atan2(vy, hx) * 180 / Math.PI;
+  if (ang < 0) ang += 360;
+  return { mag, ang };
+}
+function updRes(prefix, eye) {
+  const r = resultantPrism(val('pr-hp-' + prefix), val('pr-hb-' + prefix),
+                           val('pr-vp-' + prefix), val('pr-vb-' + prefix), eye);
+  if (!r) { setResult('pr-mag-' + prefix, '—'); setResult('pr-ang-' + prefix, '—'); return; }
+  setResult('pr-mag-' + prefix, r.mag.toFixed(2) + '∆');
+  setResult('pr-ang-' + prefix, r.mag === 0 ? '—' : Math.round(r.ang) + '°');
+}
+function updateResultant() { updRes('od', 'od'); updRes('os', 'os'); }
+
 /* ---------- Общее ---------- */
 function val(id) { return document.getElementById(id).value; }
-function updateAll() { updatePrism(); updateTranspose(); updateDiameter(); }
+function updateAll() { updatePrism(); updateTranspose(); updateDiameter(); updateResultant(); }
 document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', updateAll));
 </script>
 </body>
