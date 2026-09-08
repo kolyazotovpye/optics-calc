@@ -592,6 +592,17 @@ function updateResultant() { updRes('od', 'od'); updRes('os', 'os'); }
 function val(id) { return document.getElementById(id).value; }
 function updateAll() { updatePrism(); updateTranspose(); updateDiameter(); updateResultant(); }
 document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', updateAll));
+
+/* Транспозиция: показывать SPH/CYL до сотых (1 → 1.00) при уходе из поля */
+['t-sph-od', 't-cyl-od', 't-sph-os', 't-cyl-os'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('blur', () => {
+    if (el.value !== '') {
+      const n = parseFloat(el.value);
+      if (!isNaN(n)) el.value = n.toFixed(2);
+    }
+  });
+});
 </script>
 </body>
 </html>
