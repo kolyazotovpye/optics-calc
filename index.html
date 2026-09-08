@@ -137,7 +137,7 @@
     text-align: center;
   }
 
-  input[type=number], select {
+  input[type=text], select {
     width: 100%;
     padding: 7px 6px;
     font-size: 14px;
@@ -152,12 +152,12 @@
     font-family: inherit;
   }
 
-  input[type=number]:focus, select:focus {
+  input[type=text]:focus, select:focus {
     border-color: #aaa;
     background: #fff;
   }
 
-  input[type=number]::-webkit-inner-spin-button { opacity: 0.4; }
+  input[type=text]::-webkit-inner-spin-button { opacity: 0.4; }
 
   select {
     cursor: pointer;
@@ -231,7 +231,7 @@
 
   <!-- ВКЛАДКА 1: ПРИЗМА -->
   <div class="panel" id="panel-prism">
-    <p class="rule">Если призма &lt; 2.0 пр.дптр — смещением можно пренебречь</p>
+    <p class="rule">Если призма &lt; 2,0 пр.дптр — смещением можно пренебречь</p>
 
     <div class="card">
       <p class="section-title">Горизонтальная призма</p>
@@ -244,16 +244,16 @@
       </div>
       <div class="grid">
         <span class="eye">OD</span>
-        <input type="number" id="h-prism-od" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="h-prism-od" min="0" step="0.25" placeholder="0">
         <select id="h-base-od"><option value="BO">BO</option><option value="BI">BI</option></select>
-        <input type="number" id="h-dpp-od" min="0" step="0.5" placeholder="33">
+        <input type="text" inputmode="decimal" id="h-dpp-od" min="0" step="0.5" placeholder="33">
         <div class="result" id="h-result-od">—</div>
       </div>
       <div class="grid">
         <span class="eye">OS</span>
-        <input type="number" id="h-prism-os" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="h-prism-os" min="0" step="0.25" placeholder="0">
         <select id="h-base-os"><option value="BO">BO</option><option value="BI">BI</option></select>
-        <input type="number" id="h-dpp-os" min="0" step="0.5" placeholder="33">
+        <input type="text" inputmode="decimal" id="h-dpp-os" min="0" step="0.5" placeholder="33">
         <div class="result" id="h-result-os">—</div>
       </div>
       <p class="note" id="h-note"></p>
@@ -270,16 +270,16 @@
       </div>
       <div class="grid">
         <span class="eye">OD</span>
-        <input type="number" id="v-prism-od" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="v-prism-od" min="0" step="0.25" placeholder="0">
         <select id="v-base-od"><option value="BU">BU</option><option value="BD">BD</option></select>
-        <input type="number" id="v-hv-od" min="0" step="0.5" placeholder="26">
+        <input type="text" inputmode="decimal" id="v-hv-od" min="0" step="0.5" placeholder="26">
         <div class="result" id="v-result-od">—</div>
       </div>
       <div class="grid">
         <span class="eye">OS</span>
-        <input type="number" id="v-prism-os" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="v-prism-os" min="0" step="0.25" placeholder="0">
         <select id="v-base-os"><option value="BU">BU</option><option value="BD">BD</option></select>
-        <input type="number" id="v-hv-os" min="0" step="0.5" placeholder="26">
+        <input type="text" inputmode="decimal" id="v-hv-os" min="0" step="0.5" placeholder="26">
         <div class="result" id="v-result-os">—</div>
       </div>
       <p class="note" id="v-note"></p>
@@ -303,9 +303,9 @@
 
       <div class="grid t-grid">
         <span class="eye">OD</span>
-        <input type="number" id="t-sph-od" step="0.25" placeholder="0.00">
-        <input type="number" id="t-cyl-od" step="0.25" placeholder="0.00">
-        <input type="number" id="t-ax-od" min="0" max="180" step="1" placeholder="0">
+        <input type="text" inputmode="decimal" id="t-sph-od" step="0.25" placeholder="0,00">
+        <input type="text" inputmode="decimal" id="t-cyl-od" step="0.25" placeholder="0,00">
+        <input type="text" inputmode="decimal" id="t-ax-od" min="0" max="180" step="1" placeholder="0">
       </div>
       <div class="grid t-grid">
         <span class="eye arrow">↓</span>
@@ -318,9 +318,9 @@
 
       <div class="grid t-grid">
         <span class="eye">OS</span>
-        <input type="number" id="t-sph-os" step="0.25" placeholder="0.00">
-        <input type="number" id="t-cyl-os" step="0.25" placeholder="0.00">
-        <input type="number" id="t-ax-os" min="0" max="180" step="1" placeholder="0">
+        <input type="text" inputmode="decimal" id="t-sph-os" step="0.25" placeholder="0,00">
+        <input type="text" inputmode="decimal" id="t-cyl-os" step="0.25" placeholder="0,00">
+        <input type="text" inputmode="decimal" id="t-ax-os" min="0" max="180" step="1" placeholder="0">
       </div>
       <div class="grid t-grid">
         <span class="eye arrow">↓</span>
@@ -402,9 +402,9 @@
         <div class="col-label">Диаметр</div>
       </div>
       <div class="grid d-grid">
-        <input type="number" id="d-dbc" min="0" step="0.5" placeholder="70">
-        <input type="number" id="d-pd" min="0" step="0.5" placeholder="64">
-        <input type="number" id="d-opening" min="0" step="0.5" placeholder="52">
+        <input type="text" inputmode="decimal" id="d-dbc" min="0" step="0.5" placeholder="70">
+        <input type="text" inputmode="decimal" id="d-pd" min="0" step="0.5" placeholder="64">
+        <input type="text" inputmode="decimal" id="d-opening" min="0" step="0.5" placeholder="52">
         <div class="result" id="d-result">—</div>
       </div>
       <p class="note" id="d-note"></p>
@@ -431,9 +431,9 @@
 
       <div class="grid">
         <span class="eye">OD</span>
-        <input type="number" id="pr-hp-od" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="pr-hp-od" min="0" step="0.25" placeholder="0">
         <select id="pr-hb-od"><option value="BO">BO</option><option value="BI">BI</option></select>
-        <input type="number" id="pr-vp-od" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="pr-vp-od" min="0" step="0.25" placeholder="0">
         <select id="pr-vb-od"><option value="BU">BU</option><option value="BD">BD</option></select>
       </div>
       <div class="grid">
@@ -446,9 +446,9 @@
 
       <div class="grid">
         <span class="eye">OS</span>
-        <input type="number" id="pr-hp-os" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="pr-hp-os" min="0" step="0.25" placeholder="0">
         <select id="pr-hb-os"><option value="BO">BO</option><option value="BI">BI</option></select>
-        <input type="number" id="pr-vp-os" min="0" step="0.25" placeholder="0">
+        <input type="text" inputmode="decimal" id="pr-vp-os" min="0" step="0.25" placeholder="0">
         <select id="pr-vb-os"><option value="BU">BU</option><option value="BD">BD</option></select>
       </div>
       <div class="grid">
@@ -486,14 +486,14 @@ function calcH(prism, base, dpp) {
   if (isNaN(p) || isNaN(d)) return '—';
   const dir = base === 'BO' ? -1 : 1;
   const val = d + p * 0.25 * dir;
-  return roundHalf(val, d).toFixed(1);
+  return comma(roundHalf(val, d).toFixed(1));
 }
 function calcV(prism, base, hv) {
   const p = parseFloat(prism), h = parseFloat(hv);
   if (isNaN(p) || isNaN(h)) return '—';
   const dir = base === 'BU' ? -1 : 1;
   const val = h + p * 0.25 * dir;
-  return roundHalf(val, h).toFixed(1);
+  return comma(roundHalf(val, h).toFixed(1));
 }
 function setResult(id, val) {
   const el = document.getElementById(id);
@@ -506,7 +506,7 @@ function warnNote(prismOD, prismOS, noteId) {
   if (!isNaN(od) && od > 0 && od < 2) low.push('OD');
   if (!isNaN(os) && os > 0 && os < 2) low.push('OS');
   document.getElementById(noteId).textContent =
-    low.length ? `Призма < 2.0 пр.дптр (${low.join(', ')}) — смещением можно пренебречь` : '';
+    low.length ? `Призма < 2,0 пр.дптр (${low.join(', ')}) — смещением можно пренебречь` : '';
 }
 function updatePrism() {
   setResult('h-result-od', calcH(val('h-prism-od'), val('h-base-od'), val('h-dpp-od')));
@@ -519,8 +519,8 @@ function updatePrism() {
 
 /* ---------- Транспозиция ---------- */
 function fmtPow(n) {
-  if (n === 0) return '0.00';
-  return (n > 0 ? '+' : '−') + Math.abs(n).toFixed(2);
+  if (n === 0) return '0,00';
+  return (n > 0 ? '+' : '−') + comma(Math.abs(n).toFixed(2));
 }
 function transpose(sph, cyl, ax) {
   const s = parseFloat(sph), c = parseFloat(cyl), a = parseFloat(ax);
@@ -562,7 +562,7 @@ function updateDiameter() {
     return;
   }
   const dia = c - p + o + 1;
-  setResult('d-result', dia.toFixed(1));
+  setResult('d-result', comma(dia.toFixed(1)));
   document.getElementById('d-warn').hidden = !(dia > 71);
 }
 
@@ -583,13 +583,14 @@ function updRes(prefix, eye) {
   const r = resultantPrism(val('pr-hp-' + prefix), val('pr-hb-' + prefix),
                            val('pr-vp-' + prefix), val('pr-vb-' + prefix), eye);
   if (!r) { setResult('pr-mag-' + prefix, '—'); setResult('pr-ang-' + prefix, '—'); return; }
-  setResult('pr-mag-' + prefix, r.mag.toFixed(2) + '∆');
+  setResult('pr-mag-' + prefix, comma(r.mag.toFixed(2)) + '∆');
   setResult('pr-ang-' + prefix, r.mag === 0 ? '—' : Math.round(r.ang) + '°');
 }
 function updateResultant() { updRes('od', 'od'); updRes('os', 'os'); }
 
 /* ---------- Общее ---------- */
-function val(id) { return document.getElementById(id).value; }
+function val(id) { return document.getElementById(id).value.replace(',', '.'); }
+function comma(s) { return String(s).replace('.', ','); }
 function updateAll() { updatePrism(); updateTranspose(); updateDiameter(); updateResultant(); }
 document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', updateAll));
 
@@ -598,8 +599,8 @@ document.querySelectorAll('input, select').forEach(el => el.addEventListener('in
   const el = document.getElementById(id);
   el.addEventListener('blur', () => {
     if (el.value !== '') {
-      const n = parseFloat(el.value);
-      if (!isNaN(n)) el.value = n.toFixed(2);
+      const n = parseFloat(el.value.replace(',', '.'));
+      if (!isNaN(n)) el.value = comma(n.toFixed(2));
     }
   });
 });
