@@ -119,6 +119,9 @@
 
   .span2 { grid-column: span 2; }
 
+  /* обратный блок рез. призмы: метка + сила + угол */
+  .rp-io { grid-template-columns: 40px 1fr 1fr; }
+
   .col-label {
     font-size: 11px;
     color: #999;
@@ -461,6 +464,40 @@
     </div>
 
     <p class="foot">R = √(H² + V²) под углом · для заказа пишите по базам, не углом</p>
+
+    <div class="card">
+      <p class="section-title">Обратный расчёт: ° → базы</p>
+
+      <div class="grid rp-io">
+        <span class="eye">OD</span>
+        <input type="text" inputmode="decimal" id="rp-mag-od" placeholder="сила ∆">
+        <input type="text" inputmode="decimal" id="rp-ang-od" placeholder="угол °">
+      </div>
+      <div class="grid">
+        <span class="eye arrow">↓</span>
+        <div class="result" id="rp-h-od">—</div>
+        <div class="result" id="rp-hb-od">—</div>
+        <div class="result" id="rp-v-od">—</div>
+        <div class="result" id="rp-vb-od">—</div>
+      </div>
+
+      <div class="row-gap"></div>
+
+      <div class="grid rp-io">
+        <span class="eye">OS</span>
+        <input type="text" inputmode="decimal" id="rp-mag-os" placeholder="сила ∆">
+        <input type="text" inputmode="decimal" id="rp-ang-os" placeholder="угол °">
+      </div>
+      <div class="grid">
+        <span class="eye arrow">↓</span>
+        <div class="result" id="rp-h-os">—</div>
+        <div class="result" id="rp-hb-os">—</div>
+        <div class="result" id="rp-v-os">—</div>
+        <div class="result" id="rp-vb-os">—</div>
+      </div>
+    </div>
+
+    <p class="foot">выход: гор. ∆ · база · верт. ∆ · база</p>
   </div>
 </div>
 
@@ -588,10 +625,33 @@ function updRes(prefix, eye) {
 }
 function updateResultant() { updRes('od', 'od'); updRes('os', 'os'); }
 
+/* обратный расчёт: сила ∆ + угол° → горизонталь/база + вертикаль/база */
+function reversePrism(mag, ang, eye) {
+  const R = parseFloat(mag), th = parseFloat(ang);
+  if (isNaN(R) || isNaN(th)) return null;
+  const rad = th * Math.PI / 180;
+  const hx = R * Math.cos(rad);
+  const vy = R * Math.sin(rad);
+  const H = Math.abs(hx), V = Math.abs(vy);
+  // база по знаку и глазу: OD BO=180°(-x)/BI=0°(+x); OS BO=0°(+x)/BI=180°(-x); вверх=+y
+  const hb = (eye === 'od') ? (hx < 0 ? 'BO' : 'BI') : (hx > 0 ? 'BO' : 'BI');
+  const vb = (vy >= 0) ? 'BU' : 'BD';
+  return { H, V, hb, vb };
+}
+function updRev(prefix, eye) {
+  const r = reversePrism(val('rp-mag-' + prefix), val('rp-ang-' + prefix), eye);
+  if (!r) { ['h', 'hb', 'v', 'vb'].forEach(k => setResult('rp-' + k + '-' + prefix, '—')); return; }
+  setResult('rp-h-' + prefix, comma(r.H.toFixed(2)) + '∆');
+  setResult('rp-hb-' + prefix, r.H < 0.005 ? '—' : r.hb);
+  setResult('rp-v-' + prefix, comma(r.V.toFixed(2)) + '∆');
+  setResult('rp-vb-' + prefix, r.V < 0.005 ? '—' : r.vb);
+}
+function updateReverse() { updRev('od', 'od'); updRev('os', 'os'); }
+
 /* ---------- Общее ---------- */
 function val(id) { return document.getElementById(id).value.replace(',', '.'); }
 function comma(s) { return String(s).replace('.', ','); }
-function updateAll() { updatePrism(); updateTranspose(); updateDiameter(); updateResultant(); }
+function updateAll() { updatePrism(); updateTranspose(); updateDiameter(); updateResultant(); updateReverse(); }
 document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', updateAll));
 
 /* Транспозиция: показывать SPH/CYL до сотых (1 → 1.00) при уходе из поля */
