@@ -743,10 +743,18 @@ function decHoya(c,T){c=c.replace(/\s+/g,"");let m;
     if(m[4]){const v=(m[1]==="LS"||m[1]==="LSI")?st[m[4]]:m[1]==="MYP"?pf[m[4]]:null;l.push(v?"Буква "+m[4]+" = "+v:"Буква "+m[4]+" для этой линейки не предусмотрена");}
     else if(m[1]==="LS"||m[1]==="LSI")l.push("Буква стиля не указана: O Outdoor, U Urban, I Indoor");else if(m[1]==="MYP")l.push("Буква профиля не указана: S, D, A, E или M");
     return{brand:"HOYA",lines:l};}
+  if(m=c.match(/^(\d\d)([FBW])$/)){const t=+m[1],e=t%10,fr=e===2?".25":e===7?".75":e===5?".50":e===0?".00":null,add=fr?((t-e)/10+fr.replace(/^/,"")):null,pos={F:"впереди коррекции для дали (front)",B:"позади коррекции для дали (back)",W:"фороптер или суммарная линза в пробной оправе"}[m[2]];
+    return{brand:"HOYA",lines:["Справа от центра прогрессии: аддидация и способ подбора",add?"Add "+add.replace(/^(\d+)\.(\d+)$/,"$1,$2")+" (22 = 2,25; 10 = 1,00)":"Первые две цифры = аддидация без последней цифры (22 = 2,25; 10 = 1,00)","Положение: "+m[2]+" = "+pos]};}
+  if(m=c.match(/^(MSV|LI|L)([1-6])(7|5|3|X|1L|1)(EG|[OUI])?$/)){const n={MSV:"Hoyalux iD MyStyle V+ (прошлая модель)",L:"Hoyalux iD LifeStyle 3 (прошлая модель)",LI:"Hoyalux iD LifeStyle 3i (прошлая модель)"}[m[1]],l=[n,"Коридор "+(10+ +m[2])+" мм","Материал "+MATH[m[3]]];
+    if(m[4]==="EG")l.push("EG: версия EyeGenius");else if(m[4])l.push("Буква "+m[4]+" = "+{O:"Outdoor",U:"Urban",I:"Indoor"}[m[4]]);else if(m[1]!=="MSV")l.push("Буква стиля не указана: O Outdoor, U Urban, I Indoor");
+    return{brand:"HOYA",lines:l};}
+  if(m=c.match(/^RE(5|3|1)$/)){return{brand:"HOYA",lines:["Nulux Active (прошлая модель)","Материал "+MATH[m[1]]]};}
+  if(c==="(–)TF"||c==="(-)TF"||c==="TF"){return{brand:"HOYA",lines:["Nulux TrueForm или Hilux TrueForm: знак материала не указан"]};}
   if(m=c.match(/^([1-6])(7|5|3|X|1L|1)$/)){const l=["Коридор "+(10+ +m[1])+" мм","Материал "+MATH[m[2]]];
     return{brand:"HOYA",lines:["Hoyalux iD MySelf / MySelf Profile или LifeStyle 4(i): коды совпадают",...l,prof?"Височная "+T+" = MySelf Profile, стиль "+prof:ls?"Височная "+T+" = LifeStyle, "+ls:"Различить по височной: S/D/A/E/M у MySelf Profile, O/U/I у LifeStyle"]};}
   if(m=c.match(/^(B|DP|DA|FA)([1-6])(7|5|3|X|1L|1)$/)){const n={B:"Hoyalux Balansis",DP:"Hoyalux Daynamic",DA:"Hoyalux Amplitude Plus",FA:"Hoyalux Sportive (прогрессивные)"}[m[1]];return{brand:"HOYA",lines:[n,"Коридор "+(10+ +m[2])+" мм","Материал "+MATH[m[3]]]};}
   if(m=c.match(/^(NI|SYI|SY|SA)(7|5|3|X|1L|1)$/)){const n={NI:"Nulux iDentity V+",SYI:"SYNC IIIi",SY:"SYNC III",SA:"Nulux Sportive (однофокальные)"}[m[1]];return{brand:"HOYA",lines:[n,"Материал "+MATH[m[2]]]};}
+  if(m=c.match(/^WS3(7|5|3|X|1L|1)([CSP])(\d\d)$/)){const dn={C:"Close",S:"Screen",P:"Space"}[m[2]];return{brand:"HOYA",lines:["Hoyalux iD WorkStyle 3","Материал "+MATH[m[1]],"Дизайн "+m[2]+" = "+dn,"Длина коридора прогрессии "+m[3]+" мм (бывает 18-24 мм)"]};}
   if(m=c.match(/^(WS3|WSB|DT)(7|5|3|X|1L|1)(.*)$/)){const n={WS3:"Hoyalux iD WorkStyle 3",WSB:"Hoyalux WorkStyle Business",DT:"Hoyalux WorkSmart Room"}[m[1]];return{brand:"HOYA",lines:[n,"Материал "+MATH[m[2]],m[3]?"Дополнение: "+m[3]+" (C/S/P у WorkStyle 3, 20/220 или 2 у других)":"Вариант без дополнения"]};}
   if(m=c.match(/^DL(7|5|3|X|1L|1)(7|15)$/)){return{brand:"HOYA",lines:["SUPEREADER, вариант "+(m[2]==="7"?"A":"B"),"Материал "+MATH[m[1]]]};}
   return null;}
