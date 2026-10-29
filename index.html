@@ -563,12 +563,6 @@
       
       <p class="eg-hint">Если гравировка необычная, опишите её несколькими символами: буквами, цифрами, фигурами. Особенно это помогает с гравировками Seiko.</p>
     </div>
-    <details class="card eg-dec">
-      <summary>Расшифровать код гравировки (любой бренд)</summary>
-      <div class="eg-decin"><input type="text" id="egT" placeholder="височная: PJL12" autocomplete="off"><input type="text" id="egN" placeholder="назальная: 4260, LS65U" autocomplete="off"></div>
-      <div id="egDec" class="eg-decout"></div>
-      <p class="eg-hint">Разбор по правилам каталогов ODV, HOYA, Nikon, Lencor и ZEISS плюс точные совпадения по базе.</p>
-    </details>
     <div class="eg-count" id="egCount"></div>
     <div id="egOut"></div>
     <p class="foot">Данные собраны из каталогов производителей. Номер страницы указан для сверки: версии каталогов могут отличаться, при сомнении проверяйте по актуальному.</p>
@@ -933,8 +927,6 @@ function lookup(codes){const seen=new Set(),res=[];
     e.preventDefault(); $('egImg').src = a.dataset.img; $('egDlg').showModal();
   });
   $('egDlg').addEventListener('click', () => $('egDlg').close());
-  $('egT').addEventListener('input', egDecode);
-  $('egN').addEventListener('input', egDecode);
 })();
 </script>
 </body>
