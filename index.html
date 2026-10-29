@@ -219,6 +219,33 @@
     text-align: center;
     margin-top: 10px;
   }
+
+  /* ---------- вкладка «Гравировки» ---------- */
+  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1 0 auto; padding: 8px 10px; }
+  input.eg-search { text-align: left; padding: 9px 10px; font-size: 15px; }
+  .eg-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 2px; }
+  .eg-chip { border: 0.5px solid #ddd; background: #fafaf8; color: #1a1a1a; border-radius: 999px; padding: 4px 11px; font-size: 12px; font-family: inherit; cursor: pointer; }
+  .eg-chip[aria-pressed=true] { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .eg-hint { font-size: 12px; color: #888; margin-top: 10px; line-height: 1.4; }
+  .eg-count { font-size: 12px; color: #888; margin: 4px 2px 8px; }
+  .eg-card { margin-bottom: 8px; }
+  .eg-top { display: flex; gap: 10px; justify-content: space-between; align-items: baseline; }
+  .eg-model { font-size: 14px; font-weight: 500; }
+  .eg-code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #f0f0ec; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+  .eg-meta { font-size: 12px; color: #777; margin-top: 4px; line-height: 1.4; }
+  .eg-src { font-size: 12px; color: #999; margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .eg-src a { color: #185fa5; }
+  .eg-empty { font-size: 13px; color: #888; padding: 18px 2px; }
+  details.eg-dec summary { cursor: pointer; font-size: 13px; }
+  .eg-decin { display: flex; gap: 8px; margin-top: 10px; }
+  .eg-decin input { text-align: left; font-family: ui-monospace, Menlo, monospace; }
+  .eg-decout { font-size: 13px; margin-top: 10px; line-height: 1.45; }
+  .eg-decout b { font-weight: 500; }
+  dialog.eg-dlg { border: 0; padding: 0; max-width: 98vw; background: transparent; }
+  dialog.eg-dlg img { max-width: 98vw; max-height: 96vh; display: block; }
+  dialog.eg-dlg::backdrop { background: rgba(0,0,0,.7); }
 </style>
 <script data-goatcounter="https://kolyazotovpye.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
@@ -232,6 +259,7 @@
     <button class="tab" data-target="panel-diameter">Диаметр</button>
     <button class="tab" data-target="panel-prism">corPD</button>
     <button class="tab" data-target="panel-prismres">Рез. призма</button>
+    <button class="tab" data-target="panel-engr">Гравировки</button>
   </div>
 
   <!-- ВКЛАДКА 1: ПРИЗМА -->
@@ -500,6 +528,26 @@
     </div>
 
   </div>
+
+  <!-- ВКЛАДКА 5: ГРАВИРОВКИ -->
+  <div class="panel" id="panel-engr">
+    <div class="card">
+      <p class="section-title">Поиск по гравировкам линз</p>
+      <input type="text" id="egQ" class="eg-search" placeholder="Код или описание: AI, WS35, плечики, LS65U" autocomplete="off">
+      <div class="eg-chips" id="egChips"></div>
+      <p class="eg-hint">Если гравировка необычная, опишите её несколькими символами: буквами, цифрами, фигурами. Особенно это помогает с гравировками Seiko.</p>
+    </div>
+    <details class="card eg-dec">
+      <summary>Расшифровать код гравировки (любой бренд)</summary>
+      <div class="eg-decin"><input type="text" id="egT" placeholder="височная: PJL12" autocomplete="off"><input type="text" id="egN" placeholder="назальная: 4260, LS65U" autocomplete="off"></div>
+      <div id="egDec" class="eg-decout"></div>
+      <p class="eg-hint">Разбор по правилам каталогов ODV, HOYA, Nikon, Lencor и ZEISS плюс точные совпадения по базе.</p>
+    </details>
+    <div class="eg-count" id="egCount"></div>
+    <div id="egOut"></div>
+    <p class="foot">Данные собраны из каталогов производителей. Номер страницы указан для сверки: версии каталогов могут отличаться, при сомнении проверяйте по актуальному.</p>
+    <dialog id="egDlg" class="eg-dlg"><img id="egImg" alt="Страница каталога"></dialog>
+  </div>
 </div>
 
 <script>
@@ -665,6 +713,128 @@ document.querySelectorAll('input, select').forEach(el => el.addEventListener('in
     }
   });
 });
+
+/* ---------- Гравировки ---------- */
+(function () {
+  const tabBtn = document.querySelector('.tab[data-target="panel-engr"]');
+  let loaded = false, DATA = [], idx = [], brand = '';
+  const $ = id => document.getElementById(id);
+  const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е');
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ODV={lvl:{C:"Camber",P:"Premium",L:"Lux",S:"Standart"},des:{S:"Steady / Sport (в таблице одна буква)",W:"Mobile",P:"H65",F:"H45",M:"H25",J:"S35",U:"UltraShort",D:"Drive II"},off:{R:"Reader",C:"Computer",G:"Room"},cor:{A:8,B:9,C:10,D:11,E:12,F:13,X:14,G:15,M:16,H:17,L:18,Q:19},
+add:{"75":"0,75","10":"1,00","12":"1,25","15":"1,50","17":"1,75","20":"2,00","22":"2,25","25":"2,50","27":"2,75","30":"3,00","32":"3,25","35":"3,50","37":"3,75","40":"4,00"},addA:{"7":"0,75","5":"0,50","1":"1,00"},
+base:{"05":"0,50","10":"1,00","12":"1,25","20":"2,00","22":"2,25","30":"3,00","32":"3,25","35":"3,50","40":"4,00","42":"4,25","50":"5,00","52":"5,25","60":"6,00","62":"6,25","65":"6,50","70":"7,00","72":"7,25","80":"8,00","82":"8,25","90":"9,00","100":"10,0"},idx:{"49":"1,49","50":"1,50","53":"1,53","54":"1,54","60":"1,60","67":"1,67","74":"1,74"}};
+const MATH={"7":"1.74 (Eyvia)","5":"1.67 (Eynoa)","3":"1.60 (Eyas)","X":"1.53 (PNX)","1":"1.50","1L":"1.50 UV400"};
+function decOdv(T,N){const out=[];let ok=false,bad=false;
+  if(T){const l=T[0],r=T.slice(1),d=r[0];const L=ODV.lvl[l];
+    if(L&&r){let mid=null;
+      if(d==="A"&&ODV.addA[r.slice(1)]) mid=["Дизайн: Acomoda","Аддидация: "+ODV.addA[r.slice(1)]];
+      else if(d==="B"&&{R:1,T:1}[r[1]]&&ODV.add[r.slice(2)]) mid=["Дизайн: Bifocal, сегмент "+({R:"28",T:"40"}[r[1]])+" мм","Аддидация: "+ODV.add[r.slice(2)]];
+      else if(r.length===1&&(d==="M"||d==="D")) mid=["Дизайн: "+(d==="M"?"Mono DRP":"Mono Drive")+" (аддидации нет)"];
+      else if(ODV.off[d]&&ODV.add[r.slice(1)]) mid=["Дизайн: Office "+ODV.off[d],"Аддидация: "+ODV.add[r.slice(1)]];
+      else if(ODV.des[d]&&ODV.cor[r[1]]&&ODV.add[r.slice(2)]) mid=["Дизайн: "+ODV.des[d],"Коридор: "+ODV.cor[r[1]]+" мм","Аддидация: "+ODV.add[r.slice(2)]];
+      if(mid){out.push("Уровень: "+L,...mid);ok=true}else bad=true;}else bad=true;}
+  if(N&&/^\d{4,5}$/.test(N)){const i=N.slice(-2),b=N.slice(0,-2);if(ODV.base[b]&&ODV.idx[i]){out.push("База передней поверхности: "+ODV.base[b]+" дптр","Индекс: "+ODV.idx[i]);ok=true}else bad=true;}
+  return ok&&!bad?{brand:"ODV (каталог 2022)",lines:out}:null;}
+function decHoya(c,T){c=c.replace(/\s+/g,"");let m;
+  const prof=T&&/^[SDAEM]$/.test(T)?{S:"Stable",D:"Detail",A:"Adventure",E:"Expert",M:"Modern"}[T]:null,ls=T&&/^[OUI]$/.test(T)?{O:"Outdoor",U:"Urban",I:"Indoor"}[T]:null;
+  if(m=c.match(/^(MYP|MY|LSI|LS)([1-6])(7|5|3|X|1L|1)([A-Z])?$/)){const names={MY:"Hoyalux iD MySelf",MYP:"Hoyalux iD MySelf Profile",LS:"Hoyalux iD LifeStyle 4",LSI:"Hoyalux iD LifeStyle 4i"},l=[names[m[1]]+" (префикс "+m[1]+")","Коридор "+(10+ +m[2])+" мм","Материал "+MATH[m[3]]];
+    const st={O:"Outdoor",U:"Urban",I:"Indoor"},pf={S:"Stable",D:"Detail",A:"Adventure",E:"Expert",M:"Modern"};
+    if(m[4]){const v=(m[1]==="LS"||m[1]==="LSI")?st[m[4]]:m[1]==="MYP"?pf[m[4]]:null;l.push(v?"Буква "+m[4]+" = "+v:"Буква "+m[4]+" для этой линейки не предусмотрена");}
+    else if(m[1]==="LS"||m[1]==="LSI")l.push("Буква стиля не указана: O Outdoor, U Urban, I Indoor");else if(m[1]==="MYP")l.push("Буква профиля не указана: S, D, A, E или M");
+    return{brand:"HOYA",lines:l};}
+  if(m=c.match(/^([1-6])(7|5|3|X|1L|1)$/)){const l=["Коридор "+(10+ +m[1])+" мм","Материал "+MATH[m[2]]];
+    return{brand:"HOYA",lines:["Hoyalux iD MySelf / MySelf Profile или LifeStyle 4(i): коды совпадают",...l,prof?"Височная "+T+" = MySelf Profile, стиль "+prof:ls?"Височная "+T+" = LifeStyle, "+ls:"Различить по височной: S/D/A/E/M у MySelf Profile, O/U/I у LifeStyle"]};}
+  if(m=c.match(/^(B|DP|DA|FA)([1-6])(7|5|3|X|1L|1)$/)){const n={B:"Hoyalux Balansis",DP:"Hoyalux Daynamic",DA:"Hoyalux Amplitude Plus",FA:"Hoyalux Sportive (прогрессивные)"}[m[1]];return{brand:"HOYA",lines:[n,"Коридор "+(10+ +m[2])+" мм","Материал "+MATH[m[3]]]};}
+  if(m=c.match(/^(NI|SYI|SY|SA)(7|5|3|X|1L|1)$/)){const n={NI:"Nulux iDentity V+",SYI:"SYNC IIIi",SY:"SYNC III",SA:"Nulux Sportive (однофокальные)"}[m[1]];return{brand:"HOYA",lines:[n,"Материал "+MATH[m[2]]]};}
+  if(m=c.match(/^(WS3|WSB|DT)(7|5|3|X|1L|1)(.*)$/)){const n={WS3:"Hoyalux iD WorkStyle 3",WSB:"Hoyalux WorkStyle Business",DT:"Hoyalux WorkSmart Room"}[m[1]];return{brand:"HOYA",lines:[n,"Материал "+MATH[m[2]],m[3]?"Дополнение: "+m[3]+" (C/S/P у WorkStyle 3, 20/220 или 2 у других)":"Вариант без дополнения"]};}
+  if(m=c.match(/^DL(7|5|3|X|1L|1)(7|15)$/)){return{brand:"HOYA",lines:["SUPEREADER, вариант "+(m[2]==="7"?"A":"B"),"Материал "+MATH[m[1]]]};}
+  return null;}
+function decNikon(c){c=c.replace(/\s+/g,"");let m=c.match(/^(N|П|∩|P)(5|4|3|T|1)(0|2|4|M)?$/);if(!m)return null;
+  const ix={5:"1.74",4:"1.67",3:"1.60",T:"1.53",1:"1.50"}[m[2]],l=["Индекс "+ix];
+  if(m[3]==="M")l.push("Суффикс M: Home&Office Neo");else if(m[3])l.push("Последняя цифра "+m[3]+": коридор "+({0:10,2:12,4:14}[m[3]])+" мм (SeeMax, Presio, DigiLife)");else l.push("Без цифры коридора: Relaxsee Neo, Soltes Wide Neo, Infinite, Lite и другие");
+  l.push("Знак перед цифрой: N это буква, П или ∩ это арка (разные линейки)");return{brand:"Nikon",lines:l};}
+function decLencor(c){c=c.replace(/\s+/g,"");const m=c.match(/^L([OEDFRB])(\+?)(5|6|67|167)$/);if(!m)return null;
+  const n={O:"LENCOR One HD",E:m[2]?"LENCOR Easy+":"LENCOR Easy",D:m[2]?"LENCOR Desk+":"LENCOR Desk",F:"LENCOR Officient",R:"LENCOR Room HD",B:"LENCOR Balance / Balance Mini"}[m[1]];
+  return{brand:"Lencor",lines:[n,"Материал: "+({5:"1.5",6:"1.6",67:"1.67",167:"1.67"}[m[3]])]};}
+function decZeiss(c){c=c.replace(/\s+/g,"");const m=c.match(/^([A-Za-z]{1,4}\d?)(50|53|60|67|70|74|80|90)$/);if(!m)return null;
+  return{brand:"ZEISS",lines:["Последние две цифры "+m[2]+" = индекс 1."+m[2]+" (50, 53, 60, 67, 74; минеральные 70-90)","Префикс «"+m[1]+"» = тип линзы; названия ищите в совпадениях ниже"]};}
+function lookup(codes){const seen=new Set(),res=[];
+  for(const c of codes){const k=norm(c).replace(/\s+/g,"");if(!k)continue;
+    for(const r of DATA){const rc=norm(r.mark_code).replace(/\s+/g,"");const kw=norm(r.keywords).split(/\s+/);
+      if(rc===k||(k.length>=3&&kw.includes(k))||norm(r.mark_code).split(/[\/+]/).map(s=>s.replace(/\s+/g,"")).includes(k)){const id=r.model+"|"+r.mark_code;if(!seen.has(id)){seen.add(id);res.push(r)}}}}
+  return res;}
+
+  function egDecode() {
+    const T = $('egT').value.toUpperCase().replace(/\s+/g, ''), N = $('egN').value.toUpperCase().replace(/\s+/g, '');
+    const codes = [N, T].filter(Boolean), blocks = [];
+    const o = decOdv(T, N); if (o) blocks.push(o);
+    for (const c of codes) for (const f of [x => decHoya(x, T), decNikon, decLencor, decZeiss]) { const d = f(c); if (d) blocks.push({ ...d, brand: d.brand + ' (код ' + c + ')' }); }
+    const hits = lookup(codes);
+    let h = blocks.map(b => `<div style="margin:6px 0"><b>${esc(b.brand)}</b>${b.lines.map(s => '<div>' + esc(s) + '</div>').join('')}</div>`).join('');
+    if (hits.length) h += `<div style="margin:10px 0 4px"><b>Точные совпадения в базе (${hits.length})</b></div>` + hits.slice(0, 12).map(r => `<div>${esc(r.brand)} · ${esc(r.model)} <span style="color:#999">(${esc(r.source.replace(/\.pdf$/, ''))}, стр. ${r.page})</span></div>`).join('') + (hits.length > 12 ? `<div style="color:#999">и ещё ${hits.length - 12}, уточните код</div>` : '');
+    if (!h && codes.length) h = '<div style="color:#999">Не распознано. Попробуйте обычный поиск выше.</div>';
+    $('egDec').innerHTML = h;
+  }
+
+  function drawChips() {
+    const brands = [...new Set(DATA.map(r => r.brand))];
+    $('egChips').innerHTML = '';
+    for (const b of ['', ...brands]) {
+      const c = document.createElement('button');
+      c.className = 'eg-chip'; c.textContent = b || 'Все';
+      c.setAttribute('aria-pressed', b === brand);
+      c.onclick = () => { brand = b; drawChips(); run(); };
+      $('egChips').appendChild(c);
+    }
+  }
+  function run() {
+    const q = norm($('egQ').value).trim(), toks = q.split(/[\s,;]+/).filter(Boolean);
+    const res = idx.filter(x => !brand || x.r.brand === brand).map(x => {
+      if (!toks.length) return null;
+      for (const t of toks) if (!x.hay.includes(t)) return null;
+      let s = toks.length;
+      if (x.code === q) s += 5; else if (x.code.startsWith(q)) s += 2;
+      if (x.hay.includes(q)) s += 3;
+      if (norm(x.r.model).split(',')[0].trim() === q) s += 6;
+      return { x, s };
+    }).filter(Boolean).sort((a, b) => b.s - a.s);
+    const out = $('egOut');
+    $('egCount').textContent = toks.length ? 'Найдено: ' + res.length : 'Записей в базе: ' + DATA.length + '. Начните вводить запрос.';
+    if (!toks.length) { out.innerHTML = ''; return; }
+    if (!res.length) { out.innerHTML = '<div class="eg-empty">Не найдено в каталогах. Проверьте написание кода или опишите знак другими словами.</div>'; return; }
+    out.innerHTML = res.slice(0, 60).map(({ x }) => { const r = x.r; return `
+      <div class="card eg-card">
+        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span><span class="eg-code">${esc(r.mark_code)}</span></div>
+        <div class="eg-meta">${esc(r.mark_visual)}</div>
+        <div class="eg-meta">${esc(r.where)}</div>
+        <div class="eg-src"><span>${esc(r.source.replace(/\.pdf$/, ''))}, стр. ${r.page}</span>${r.image ? `<a href="#" data-img="${esc('engravings/' + r.image)}">показать страницу</a>` : ''}</div>
+      </div>`; }).join('') + (res.length > 60 ? '<div class="eg-count">Показаны первые 60, уточните запрос.</div>' : '');
+  }
+  function init() {
+    DATA = window.ENGRAVINGS || [];
+    idx = DATA.map(r => ({ r, hay: norm([r.brand, r.kind, r.mark_code, r.mark_visual, r.model, r.keywords].join(' ')), code: norm(r.mark_code) }));
+    drawChips(); run();
+  }
+  function load() {
+    if (loaded) return; loaded = true;
+    $('egCount').textContent = 'Загружаю базу…';
+    const s = document.createElement('script');
+    s.src = 'engravings/data.js';
+    s.onload = init;
+    s.onerror = () => { loaded = false; $('egCount').textContent = 'Не удалось загрузить базу гравировок.'; };
+    document.head.appendChild(s);
+  }
+  tabBtn.addEventListener('click', load);
+  $('egQ').addEventListener('input', run);
+  $('egOut').addEventListener('click', e => {
+    const a = e.target.closest('a[data-img]'); if (!a) return;
+    e.preventDefault(); $('egImg').src = a.dataset.img; $('egDlg').showModal();
+  });
+  $('egDlg').addEventListener('click', () => $('egDlg').close());
+  $('egT').addEventListener('input', egDecode);
+  $('egN').addEventListener('input', egDecode);
+})();
 </script>
 </body>
 </html>
