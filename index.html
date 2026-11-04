@@ -578,8 +578,21 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(tab.dataset.target).classList.add('active');
+    const slug = TAB_SLUG[tab.dataset.target];
+    if (slug && location.hash !== '#' + slug) history.replaceState(null, '', '#' + slug);
   });
 });
+/* у каждой вкладки свой адрес: #transpose, #diameter, #engravings, #corpd, #prism */
+const TAB_SLUG = { 'panel-transpose': 'transpose', 'panel-diameter': 'diameter', 'panel-engr': 'engravings', 'panel-prism': 'corpd', 'panel-prismres': 'prism' };
+function openTabFromHash() {
+  const slug = decodeURIComponent(location.hash.slice(1));
+  const target = Object.keys(TAB_SLUG).find(k => TAB_SLUG[k] === slug);
+  const btn = target && document.querySelector('.tab[data-target="' + target + '"]');
+  if (btn && !btn.classList.contains('active')) btn.click();
+  else if (btn && target === 'panel-engr') btn.click();
+}
+window.addEventListener('hashchange', openTabFromHash);
+document.addEventListener('DOMContentLoaded', openTabFromHash);
 
 /* ---------- Призма ---------- */
 function roundHalf(val, original) {
