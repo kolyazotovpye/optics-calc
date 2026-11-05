@@ -1408,21 +1408,26 @@ function lookup(codes){const seen=new Set(),res=[];
   const skMono=r=>r.brand==="Seiko"&&/\(монофокальная\)/.test(r.model);
   const skGroup=r=>{const m=r.model.match(/SEIKO\s+(A-ZONE|AZ|AS|SPH)\b/i);return m?m[1].toUpperCase():"";};
   const gFams=G=>lsBF&&G.M.some(r=>r.B.b===lsBF)?G.M.filter(r=>r.B.b===lsBF):G.M;
-  function gFilter(x){const M=LS.gen,MM=gFams(M);
+  function gFilter(x){if(lsBF==="HOYA")return x.r.brand==="HOYA"?1:null;
+    if(!lsBF&&x.r.brand==="HOYA"&&document.getElementById("lsS1").value==="○"&&!lsAnyFilled())return 1;
+    const M=LS.gen,MM=gFams(M);
     const fams=MM.filter(r=>r.B.b===x.r.brand);if(!fams.length)return null;
     if(MM.length>40)return 1;
     const mn=norm(x.r.model);
     return fams.some(r=>mn.includes(norm(r.fam.m).replace(/ \(.*\)$/,"").replace(/ \/ .*$/,"")))?3:null;}
   function gDecode(G){const F=G.F,L=s=>"<div>"+esc(s)+"</div>";
     const brands=[...new Set(G.M.map(r=>r.B.b))];
-    if(lsBF&&!brands.includes(lsBF))lsBF="";
-    const M=gFams(G);
+    /* HOYA разбирается своим разборщиком (по коду в окнах). Пока код не вписан и выбран круг, даём кнопку HOYA */
+    const hoyaChip=(document.getElementById("lsS1").value==="○")&&!lsAnyFilled(),hoyaN=new Set(Object.values(HY_FAM).map(f=>f.n)).size;
+    if(lsBF&&!brands.includes(lsBF)&&!(lsBF==="HOYA"&&hoyaChip))lsBF="";
+    const M=lsBF==="HOYA"?[]:gFams(G);
     const pl=(n,a,b,d)=>{const x=n%10,y=n%100;return x===1&&y!==11?a:x>=2&&x<=4&&(y<12||y>14)?b:d;};
     const full=M.length===1&&M[0].full;const out=[];
-    out.push("<div><b>"+esc(full?"Полное совпадение":"Частичное совпадение: "+M.length+" "+pl(M.length,"линейка","линейки","линеек")+(lsBF?"":" ("+brands.join(", ")+")"))+"</b></div>");
-    if(brands.length>1){const cnt=b=>G.M.filter(r=>r.B.b===b).length;
-      out.push('<div class="ls-chips" role="group" aria-label="Производитель">'+[["","Все",G.M.length],...brands.map(b=>[b,b,cnt(b)])].map(([v,t,n])=>
+    out.push("<div><b>"+esc(lsBF==="HOYA"?"HOYA: "+hoyaN+" "+pl(hoyaN,"линейка","линейки","линеек"):full?"Полное совпадение":"Частичное совпадение: "+M.length+" "+pl(M.length,"линейка","линейки","линеек")+(lsBF?"":" ("+(hoyaChip?["HOYA",...brands]:brands).join(", ")+")"))+"</b></div>");
+    if(brands.length>1||hoyaChip){const cnt=b=>G.M.filter(r=>r.B.b===b).length;
+      out.push('<div class="ls-chips" role="group" aria-label="Производитель">'+[["","Все",G.M.length+(hoyaChip?hoyaN:0)],...(hoyaChip?[["HOYA","HOYA",hoyaN]]:[]),...brands.map(b=>[b,b,cnt(b)])].map(([v,t,n])=>
         '<button type="button" class="ls-chip" data-bf="'+esc(v)+'" aria-pressed="'+(lsBF===v)+'">'+esc(t)+' <span>'+n+'</span></button>').join("")+"</div>");}
+    if(lsBF==="HOYA"){out.push(L("Впишите код под кругом со стороны носа (например MY43, LS65U, Ni7), чтобы разобрать линейку, коридор и материал"));return out.join("");}
     if(M.length===1){const r=M[0];out.push(L("Линейка: "+r.fam.n+" ("+r.B.src+(r.fam.p&&!/стр\./.test(r.B.src)?", стр. "+r.fam.p:"")+")"));
       for(const k of ["nT","nB","tT","tB"])r.r[k].lines.forEach(s=>out.push(L(s)));}
     else{const common=[];for(const k of ["nT","nB","tT","tB"]){const ls=M.map(r=>r.r[k].lines.join("; "));if(ls[0]&&ls.every(x=>x===ls[0]))common.push(ls[0]);}
