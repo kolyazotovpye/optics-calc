@@ -878,7 +878,7 @@ function lookup(codes){const seen=new Set(),res=[];
   const SHAPES={"◇":["ромб","◇"],"□":["квадрат","□"],"△":["треугольник вверх","△"],"▽":["треугольник вниз","▽"],"○":["круг","кружк","кругл","○","ⓢ"]};
   const lsAnyFilled=()=>["lsL1","lsL2","lsD1","lsD2"].some(id=>document.getElementById(id).value.trim());
   function lsExtra(x){
-    if(LS.hoya)return x.r.brand==="HOYA"&&x.code.split(/[\s\/+]+/).includes(LS.hoya.base)?4:null;
+    if(LS.hoya)return hyValid(LS.hoya,LS.F)&&hyRow(x,LS.hoya,LS.F)?4:null;
     if(LS.hy)return x.r.brand==="HOYA"&&LS.hy.bases.size&&x.code.split(/[\s\/+]+/).some(t=>LS.hy.bases.has(t))?2:null;
     if(LS.sk)return skFilter(x);
     if(LS.gen)return gFilter(x);
@@ -996,6 +996,22 @@ function lookup(codes){const seen=new Set(),res=[];
     const per=filled.map(k=>({k,n:HY_CANDS.filter(x=>hyCandOk(x,{[k]:F[k]},"pre")||(k==="nB"&&hyCandOk(x,{nB:F.nB},"in"))).length}));
     if(per.every(p=>p.n>0))return {cands:[],filled,conflict:per};
     return null;}
+  /* Синтаксически прочитанный код ещё не означает допустимое сочетание окон. */
+  function hyValid(h,F){
+    const f=h.f;
+    if(f.c&&!f.c.includes(h.cor))return false;
+    if(!f.m.match(/1L|[0-9X]/g).includes(h.mat))return false;
+    if(f.sufReq&&!h.suf)return false;
+    return hyCandOk({k:h.k,f,code:h.k+h.cor+h.mat+(f.sufReq?h.suf:"")},F,"pre");
+  }
+  function hyRow(x,h,F){
+    if(x.r.brand!=="HOYA"||!x.code.split(/[\s\/+]+/).includes(h.base))return false;
+    const top=hyClean(F.tT),tk=x.code.toUpperCase().split(/\s+/);
+    if(h.f.top==="ws3"&&top)return tk.some(t=>t===top||t===top[0]+"XX");
+    if(h.f.top==="wsb"&&top)return tk.includes(top);
+    if(h.f.top==="dt")return String(x.r.model).includes(top==="2"?"200":"400");
+    return true;
+  }
   const HY_FIELD={nT:"над назальным кругом",nB:"под назальным кругом",tT:"над темпоральным кругом",tB:"под темпоральным кругом"};
   function hyPartial(M,F){
     const out=[],c=M.cands;
@@ -1349,7 +1365,7 @@ function lookup(codes){const seen=new Set(),res=[];
   /* Rupp+Hubrach (каталог стр. 14): знак дизайна + метка материала */
   const RH_MAT=GE({"6":"1.6","67":"1.67","74":"1.74",P:"Airium"},{l:"Материал",opt:1});
   const RH_DES=GE({"Σ":"SELECTAL TOP / SPORTS SELECTAL TOP","сигма":"SELECTAL TOP (Σ)","Ψ":"SENTORIS mini","пси":"SENTORIS mini (Ψ)","Φ":"SPORTS.free","фи":"SPORTS.free (Φ)","ʃ":"SENTORIS","f":"xfree","fΣ":"SELECTAL TOP xfree",
-    "X":"SELECTAL TOP office","M8":"Glass SELECTAL TOP 4S","◁":"SENTORIS TOP / TOP mini","Mio":"SENTORIS TOP Mio","⊕":"YSIS naviso","⊗":"YSIS naviso SV","M⊕":"YSIS naviso METRIS"},{l:"Знак дизайна"});
+    "X":"SELECTAL TOP office","M8":"Glass SELECTAL TOP 4S","◁":"SENTORIS TOP / SENTORIS TOP mini","Mio":"SENTORIS TOP Mio","⊕":"YSIS naviso","⊗":"YSIS naviso SV","M⊕":"YSIS naviso METRIS"},{l:"Знак дизайна"});
   GBR.push({b:"Rupp+Hubrach",c:"○",src:"каталог Rupp+Hubrach, стр. 14",fams:[{n:"Rupp+Hubrach (дизайн по знаку)",m:"r+h",f:{nB:[RH_DES,RH_MAT],tB:[ADD2]}}]});
   /* Rodenstock («Альманах гравировок», стр. 20–22): в центре функциональная гравировка, у виска дополнительная гравировка */
   const RD_ADD=Object.assign({},ADD2,{opt:1});
@@ -1408,13 +1424,50 @@ function lookup(codes){const seen=new Set(),res=[];
   const skMono=r=>r.brand==="Seiko"&&/\(монофокальная\)/.test(r.model);
   const skGroup=r=>{const m=r.model.match(/SEIKO\s+(A-ZONE|AZ|AS|SPH)\b/i);return m?m[1].toUpperCase():"";};
   const gFams=G=>lsBF&&G.M.some(r=>r.B.b===lsBF)?G.M.filter(r=>r.B.b===lsBF):G.M;
+  /* Таблицы описывают семейства, а карточки могут относиться к разным дизайнам. */
+  function gRow(x,r,F){
+    const mn=norm(x.r.model),compact=v=>norm(v).replace(/\s+/g,"");
+    if(r.B.b==="Rupp+Hubrach"){
+      const token=String(F.nB||"").trim().split(/[\s,;]+/)[0],rule=r.fam.f.nB[0];
+      const key=Object.keys(rule.e).find(k=>k===token)||Object.keys(rule.e).find(k=>gUp(k)===gUp(token));
+      if(!key)return mn.startsWith("r+h ");
+      const names=rule.e[key].split(" / ").map(n=>norm(n).replace(/ \(.*$/, ""));
+      const model=mn.replace(/^r\+h\s+/,"").replace(/ \(.*$/, "");
+      return names.includes(model);
+    }
+    if(r.B.b==="Kodak"){
+      const ts=String(F.nB||"").trim().split(/[\s,;]+/),codes=Object.keys(KD.e);
+      const code=ts.find(t=>codes.some(k=>gUp(k)===gUp(t)));
+      return code?compact(x.r.mark_code)===compact(code):mn.includes("kodak");
+    }
+    if(r.B.b==="ODV"){
+      const t=String(F.tB||"").trim().toUpperCase(),prefix=t.match(/^[CPLS][SWPFMJUDRCGAB]/);
+      if(prefix)return x.r.kind==="дизайн"&&gUp(x.r.mark_code).startsWith(prefix[0]);
+      return x.r.brand==="ODV";
+    }
+    const names=String(r.fam.m).replace(/ \(.*$/, "").split(" / ").map(norm);
+    if(!names.some(n=>mn.includes(n)))return false;
+    if(r.B.b==="Maxxee"&&F.nB)return compact(x.r.mark_code)===compact(F.nB);
+    if(r.B.b==="Nikon"&&F.nB){
+      const q=compact(F.nB),code=compact(x.r.mark_code);
+      /* Раскрываем варианты N4 0/2/4, сохраняя префикс материала N4. */
+      const variants=code.match(/^(.+?)([024](?:\/[024])+)$/);
+      const codes=variants?[variants[1],...variants[2].split("/").map(c=>variants[1]+c)]:[code];
+      if(!codes.some(c=>c.startsWith(q)))return false;
+    }
+    if(r.B.b==="BBGR"&&F.nB){
+      const material=String(F.nB).trim().split(/\s+/).find(t=>["5","6","67","74"].includes(t));
+      if(material&&!String(x.r.mark_code).split(/\s+/).includes(material))return false;
+    }
+    return true;
+  }
   function gFilter(x){if(lsBF==="HOYA")return x.r.brand==="HOYA"?1:null;
     if(!lsBF&&x.r.brand==="HOYA"&&document.getElementById("lsS1").value==="○"&&!lsAnyFilled())return 1;
-    const M=LS.gen,MM=gFams(M);
-    const fams=MM.filter(r=>r.B.b===x.r.brand);if(!fams.length)return null;
+    const M=LS.gen,MM=gFams(M),fams=MM.filter(r=>r.B.b===x.r.brand);
+    if(!fams.length)return null;
     if(MM.length>40)return 1;
-    const mn=norm(x.r.model);
-    return fams.some(r=>mn.includes(norm(r.fam.m).replace(/ \(.*\)$/,"").replace(/ \/ .*$/,"")))?3:null;}
+    return fams.some(r=>gRow(x,r,M.F))?3:null;
+  }
   function gDecode(G){const F=G.F,L=s=>"<div>"+esc(s)+"</div>";
     const brands=[...new Set(G.M.map(r=>r.B.b))];
     /* HOYA разбирается своим разборщиком (по коду в окнах). Пока код не вписан и выбран круг, даём кнопку HOYA */
@@ -1438,7 +1491,8 @@ function lookup(codes){const seen=new Set(),res=[];
   function lsDecode(){const el=document.getElementById("lsDec");
     const mirNote=LS.mirror?'<div class="ls-note" style="margin:0 0 6px">Назальная сторона справа, окна прочитаны зеркально: так бывает на второй линзе пары или если смотреть на линзу с другой стороны</div>':"";
     const box=h=>{el.innerHTML='<div class="ls-out">'+mirNote+h+"</div>";};
-    if(LS.hoya)return box('<div><b>Полное совпадение: код распознан</b></div>'+hyDecode(LS.hoya,LS.F.nT,LS.F.tT,LS.F.tB));
+    if(LS.hoya){const valid=hyValid(LS.hoya,LS.F);
+      return box('<div><b>'+ (valid?"Полное совпадение: код распознан":"Есть конфликт в данных: проверьте заполненные окна")+'</b></div>'+hyDecode(LS.hoya,LS.F.nT,LS.F.tT,LS.F.tB));}
     if(LS.hy)return box(hyPartial(LS.hy,LS.F));
     if(LS.sk)return box(skDecode(LS.sk));
     if(LS.gen)return box(gDecode(LS.gen));
@@ -1446,6 +1500,7 @@ function lookup(codes){const seen=new Set(),res=[];
       const chips='<div class="ls-chips" role="group" aria-label="Группа">'+[["","Все",all.length],...SK_GROUPS.map(g=>[g,g,cnt(g)])].map(([v,t,n])=>'<button type="button" class="ls-chip" data-sg="'+v+'" aria-pressed="'+(lsSG===v)+'">'+esc(t)+' <span>'+n+'</span></button>').join("")+"</div>";
       return box("<div><b>Логотип вместо S: монофокальные линзы Seiko</b></div>"+chips+"<div>"+esc("Так маркируются монофокальные линзы A-ZONE, AZ, AS и SPH (стр. 12–16, 41–83). Кода, знака индекса и цифр у них нет, линейку определяют по виду логотипа: S в овале, 1S, S в ромбе, S1, S в круге и другие.")+"</div>"+(lsAnyFilled()?'<div class="ls-warn">У этих линз других символов вокруг логотипа нет, проверьте окна</div>':""));}
     if(LS.center==="○"&&!lsAnyFilled())return box("<div>"+esc("Круг в центре: так гравирует HOYA. Впишите код под кругом со стороны носа, чтобы определить линзу")+"</div>");
+    if(lsAnyFilled()&&idx.some(x=>textEligible(x,lsTextToks(),lsCenterBrands())))return box('<div><b>Найдено по тексту каталога</b></div><div>Подробная расшифровка этого кода пока не поддерживается. Сверьте найденную карточку и страницу каталога.</div>');
     if(lsAnyFilled())return box('<div class="ls-warn">Не распознано ни по одному из разобранных каталогов. Проверьте окна: код линзы обычно стоит под знаком со стороны носа, аддидация под знаком со стороны виска</div>');
     el.innerHTML="";}
   const LS_IN={L:["lsL1","lsL2"],shape:["lsS1","lsS2"],digits:["lsD1","lsD2"]};
@@ -1463,6 +1518,9 @@ function lookup(codes){const seen=new Set(),res=[];
     const c=document.getElementById("lsS1").value;
     Object.assign(LS,{center:c,hoya:null,hy:null,sk:null,gen:null,logo:c==="logo",mirror:false,F:lsFields(false)});
     if(LS.logo)return;
+    /* Год каталога без выбранного знака — текстовый запрос, не неполная гравировка. */
+    const textTokens=lsTextToks();
+    if(!c&&textTokens.length&&textTokens.every(t=>/^(19|20)\d{2}$/.test(t)))return;
     const set=(o)=>{Object.assign(LS,o);return true;};
     const genC=GBR.some(B=>B.c===c);
     const esMark=["lsL1","lsL2","lsD1","lsD2"].some(id=>/ⓔ|◠○|M↓|≺HF/.test(lsRaw(id)));
@@ -1548,15 +1606,20 @@ function lookup(codes){const seen=new Set(),res=[];
     }
     return s;
   }
+  function textEligible(x,toks,cb){
+    const words=toks.filter(t=>!/^[-+–()]+$/.test(t));
+    return words.length&&(!cb||cb.has(x.r.brand))&&words.every(t=>textScore(x,[t])>0);
+  }
   function run() {
     const toks = lsTextToks(), cb = lsCenterBrands();
+    const structured=!!(LS.hoya||LS.hy||LS.sk||LS.gen||LS.logo);
     const res = idx.filter(x => !brand || x.r.brand === brand).map(x => {
       const e = lsExtra(x);
       if (lsBF && LS.gen && x.r.brand !== lsBF) return null;
-      const t = toks.length && (!cb || cb.has(x.r.brand)) ? textScore(x, toks) : 0;
-      if (e === null && !t) return null;
-      if (e !== null && !t && !lsActive()) return null;
-      return { x, s: t * 2 + (e || 0) };
+      /* Текст не должен возвращать карточку, отвергнутую разбором окон. */
+      if(structured){if(e===null)return null;return {x,s:e};}
+      if(!textEligible(x,toks,cb))return null;
+      return {x,s:textScore(x,toks)*2};
     }).filter(Boolean).sort((a, b) => b.s - a.s);
     const out = $('egOut');
     $('egCount').textContent = (toks.length || lsActive()) ? 'Найдено: ' + res.length : 'Записей в базе: ' + DATA.length + '. Заполните окна на схеме.';
@@ -1583,6 +1646,15 @@ function lookup(codes){const seen=new Set(),res=[];
   }
   function init() {
     DATA = window.ENGRAVINGS || [];
+    /* Не смешиваем версии Nikon: старый код может совпадать с современной линейкой. */
+    const archivedNikon=DATA.filter(r=>r.brand==="Nikon"&&r.source==="Альманах гравировок.pdf").map(r=>{
+      const m=String(r.mark_code).match(/^([A-Za-z∩П]+[0-9T])\s+([024](?:\/[024])*)$/);
+      if(!m)return null;
+      const e={[m[1]]:"Код из «Альманаха гравировок»: "+r.model+"; коридор не уточнён"};
+      for(const cor of m[2].split("/"))e[m[1]+cor]="Код из «Альманаха гравировок»: "+r.model+", коридор "+(10+ +cor)+" мм";
+      return {n:r.model+" (Альманах, стр. "+r.page+")",m:r.model,nofull:1,f:{nB:[Object.assign(GE(e),{join:1})],tB:[ADD2]}};
+    }).filter(Boolean);
+    if(archivedNikon.length)GBR.push({b:"Nikon",c:"○",src:"«Альманах гравировок» (старые модели; сверяйте версию каталога)",fams:archivedNikon});
     idx = DATA.map(r => ({ r, hay: norm([r.brand, r.kind, r.mark_code, r.mark_visual, r.model, r.keywords].join(' ')), code: norm(r.mark_code) }));
     lsInit(); run();
   }
