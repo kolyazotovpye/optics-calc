@@ -1542,11 +1542,11 @@ function lookup(codes){const seen=new Set(),res=[];
     if (!res.length) { out.innerHTML = '<div class="eg-empty">Не найдено в каталогах. Проверьте написание кода или опишите знак другими словами.</div>'; return; }
     out.innerHTML = res.slice(0, 60).map(({ x }) => { const r = x.r; return `
       <div class="card eg-card"><div class="eg-row"><div class="eg-main">
-        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span><span class="eg-code">${esc(r.mark_code)}</span></div>
+        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span>${r.mark_code && r.mark_code.length <= 14 ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
         <div class="eg-meta">${esc(r.mark_visual)}</div>
         <div class="eg-meta">${esc(r.where)}</div>
         <div class="eg-src">${egLinks(r)}</div>
-      </div>${r.crop ? `<img class="eg-crop" src="${esc('engravings/' + r.crop)}"${/@2x\./.test(r.crop) ? ` onload="this.style.width=this.naturalWidth/2+'px'"` : ''} alt="Гравировка: ${esc(r.model)}" loading="lazy">` : ''}</div>
+      </div>${r.crop ? `<img class="eg-crop" src="${esc('engravings/' + r.crop)}"${/@2x\./.test(r.crop) ? ` onload="this.style.width=(this.naturalWidth/2)*Math.min(1,40/(this.naturalHeight/2))+'px'"` : ''} alt="Гравировка: ${esc(r.model)}" loading="lazy">` : ''}</div>
       </div>`; }).join('') + (res.length > 60 ? '<div class="eg-count">Показаны первые 60, уточните запрос.</div>' : '');
   }
   /* ссылки карточки: страница продукта, разметочная карта, таблица гравировок (если гравировка описана на отдельной странице) */
