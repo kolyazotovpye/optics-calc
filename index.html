@@ -872,7 +872,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if(LS.hy)return x.r.brand==="HOYA"&&LS.hy.bases.size&&x.code.split(/[\s\/+]+/).some(t=>LS.hy.bases.has(t))?2:null;
     if(LS.sk)return skFilter(x);
     if(LS.gen)return gFilter(x);
-    if(LS.logo)return x.r.brand==="Seiko"&&norm(x.r.model).includes("стоков")?2:null;
+    if(LS.logo){if(!skMono(x.r))return null;return !lsSG||skGroup(x.r)===lsSG?2:null;}
     return lsAnyFilled()||LS.center?null:0;}
   const lsActive=()=>!!(LS.hoya||LS.hy||LS.sk||LS.gen||LS.logo||LS.center||lsAnyFilled());
   /* ---- HOYA: разбор гравировки по окнам (каталог HOYA 2026, стр. 166–168; прошлые модели — каталог 2023) ---- */
@@ -1392,6 +1392,11 @@ function lookup(codes){const seen=new Set(),res=[];
     return {M:ma,F:a,mir:false};}
   /* фильтр по производителю в списке вариантов (кнопки над списком) */
   let lsBF="";
+  /* группы монофокальных линз Seiko с логотипом вместо S */
+  let lsSG="";
+  const SK_GROUPS=["SPH","AS","AZ","A-ZONE"];
+  const skMono=r=>r.brand==="Seiko"&&/\(монофокальная\)/.test(r.model);
+  const skGroup=r=>{const m=r.model.match(/SEIKO\s+(A-ZONE|AZ|AS|SPH)\b/i);return m?m[1].toUpperCase():"";};
   const gFams=G=>lsBF&&G.M.some(r=>r.B.b===lsBF)?G.M.filter(r=>r.B.b===lsBF):G.M;
   function gFilter(x){const M=LS.gen,MM=gFams(M);
     const fams=MM.filter(r=>r.B.b===x.r.brand);if(!fams.length)return null;
@@ -1422,7 +1427,9 @@ function lookup(codes){const seen=new Set(),res=[];
     if(LS.hy)return box(hyPartial(LS.hy,LS.F));
     if(LS.sk)return box(skDecode(LS.sk));
     if(LS.gen)return box(gDecode(LS.gen));
-    if(LS.logo)return box("<div><b>Логотип вместо S: складская (стоковая) линза Seiko</b></div><div>"+esc("Так маркируются линзы со склада: SRC (стр. 12–16), A-Zone, AZ, AS и SPH (стр. 41–83). Кода, знака индекса и цифр у них нет, линейку определяют по виду логотипа: S в овале, 1S, S в ромбе, S1, S в круге и другие.")+"</div>"+(lsAnyFilled()?'<div class="ls-warn">У складских линз других символов вокруг логотипа нет, проверьте окна</div>':""));
+    if(LS.logo){const all=DATA.filter(skMono),cnt=g=>all.filter(r=>skGroup(r)===g).length;
+      const chips='<div class="ls-chips" role="group" aria-label="Группа">'+[["","Все",all.length],...SK_GROUPS.map(g=>[g,g,cnt(g)])].map(([v,t,n])=>'<button type="button" class="ls-chip" data-sg="'+v+'" aria-pressed="'+(lsSG===v)+'">'+esc(t)+' <span>'+n+'</span></button>').join("")+"</div>";
+      return box("<div><b>Логотип вместо S: монофокальные линзы Seiko</b></div>"+chips+"<div>"+esc("Так маркируются монофокальные линзы A-ZONE, AZ, AS и SPH (стр. 12–16, 41–83). Кода, знака индекса и цифр у них нет, линейку определяют по виду логотипа: S в овале, 1S, S в ромбе, S1, S в круге и другие.")+"</div>"+(lsAnyFilled()?'<div class="ls-warn">У этих линз других символов вокруг логотипа нет, проверьте окна</div>':""));}
     if(LS.center==="○"&&!lsAnyFilled())return box("<div>"+esc("Круг в центре: так гравирует HOYA. Впишите код под кругом со стороны носа, чтобы определить линзу")+"</div>");
     if(lsAnyFilled())return box('<div class="ls-warn">Не распознано ни по одному из разобранных каталогов. Проверьте окна: код линзы обычно стоит под знаком со стороны носа, аддидация под знаком со стороны виска</div>');
     el.innerHTML="";}
@@ -1458,9 +1465,9 @@ function lookup(codes){const seen=new Set(),res=[];
     if(tryHoya(false)||trySeiko(false)||tryGen(false))return;
     allowConf=true;if(!c&&trySeiko(false))return;
     if(!c){const O=lsOrient();if(O.M)set({F:O.F,mirror:O.mir,hy:Object.assign(O.M,{bases:new Set()})});}}
-  const lsUpd=()=>{lsBF="";lsSync();lsDecode();run();};
+  const lsUpd=()=>{lsBF="";lsSG="";lsSync();lsDecode();run();};
   document.getElementById("lsDec").addEventListener("click",e=>{const b=e.target.closest(".ls-chip");if(!b)return;
-    lsBF=b.dataset.bf;lsDecode();run();});
+    if(b.dataset.sg!==undefined)lsSG=b.dataset.sg;else lsBF=b.dataset.bf;lsDecode();run();});
   function lsClear(){lsPopClose();
     for(const id of ["lsL1","lsL2","lsD1","lsD2"])document.getElementById(id).value="";
     for(const id of LS_IN.shape){const b=document.getElementById(id);b.value="";b.dataset.disp="";b.textContent="";}
@@ -1480,7 +1487,7 @@ function lookup(codes){const seen=new Set(),res=[];
         e.stopPropagation();lsPopOpen(el,LS_IDXSYMS,v=>{el.value=v;});});}
     document.addEventListener("click",e=>{if(!e.target.closest("#lsPop"))lsPopClose();});
     document.addEventListener("keydown",e=>{if(e.key==="Escape")lsPopClose();});}
-  const LS_SYMS=[["","нет знака"],["○","круг (HOYA, Essilor, Nikon и др.)"],["S","буква S (Seiko)"],["logo","логотип Seiko (складская линза)","Ⓢ"],["Z","логотип ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","старый логотип Shamir",'<span class="lslogo shlogo" role="img" aria-label="логотип Shamir"></span>'],["Sh","логотип Shamir",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","восьмёрка ∞ (Rodenstock Impression)"],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma)"]]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
+  const LS_SYMS=[["","нет знака"],["○","круг (HOYA, Essilor, Nikon и др.)"],["S","буква S (Seiko)"],["logo","логотип Seiko (монофокальные)","Ⓢ"],["Z","логотип ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","старый логотип Shamir",'<span class="lslogo shlogo" role="img" aria-label="логотип Shamir"></span>'],["Sh","логотип Shamir",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","восьмёрка ∞ (Rodenstock Impression)"],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma)"]]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
   const LS_ESSYMS=[["","очистить / вписать код вручную"],["\\ⓔ/","между косыми: Xclusive, X track, X track 3D, X track 2","\\ⓔ/"],["ⓔ","в дуге: X 4D, X 3D, X 2, X Design","ⓔ"],
     ["☀ⓔ","с лучами: Physio Extensee","☀ⓔ"],["(ⓔ","с дугой слева: Comfort Max","(ⓔ"],["ⓔ⌣","над дугами: Liberty 3.0","ⓔ⌣"],
     ["◠○","«вайфай» над кружком: Eyezen","◠○"],["◠○λ","«вайфай» и λ: Eyezen lite","◠○λ"],["M↓+","M↓ +: Myopilux Plus","M↓+"],["≺HF","≺ HF: Essilor f-360°","≺HF"]];
@@ -1542,7 +1549,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if (!res.length) { out.innerHTML = '<div class="eg-empty">Не найдено в каталогах. Проверьте написание кода или опишите знак другими словами.</div>'; return; }
     out.innerHTML = res.slice(0, 60).map(({ x }) => { const r = x.r; return `
       <div class="card eg-card"><div class="eg-row"><div class="eg-main">
-        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span>${r.mark_code && r.mark_code.length <= 14 ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
+        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span>${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
         ${r.crop ? '' : `<div class="eg-meta">${esc(r.mark_visual)}</div>`}
         <div class="eg-meta">${esc(r.where)}</div>
         <div class="eg-src">${egLinks(r)}</div>
