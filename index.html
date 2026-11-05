@@ -1353,9 +1353,6 @@ function lookup(codes){const seen=new Set(),res=[];
     rd("◌","Progressiv Ergo 2 / Perfalit MonoPlus 2",{B:"Progressiv Ergo 2 Book",P:"Progressiv Ergo 2 PC",R:"Progressiv Ergo 2 Room"})]});
   GBR.push({b:"Rodenstock",c:"▭",src:"«Альманах гравировок», стр. 22",fams:[
     rd("▭","Nexyma",{N4:"Nexyma 40, дегрессия 1,0",N8A:"Nexyma 80 A, дегрессия 0,8",N8B:"Nexyma 80 B, дегрессия 1,5"})]});
-  /* Younger Optics («Альманах», стр. 35) */
-  GBR.push({b:"Younger Optics",c:"Y",src:"«Альманах гравировок», стр. 35",fams:[
-    {n:"Younger Image / Adage / Trilogy",m:"Younger",f:{tB:[ADD2],nT:[GE({Y:"Y"},{opt:1})],nB:[GE({HI:"Image 1.67",I:"Image Easy Lite 1.55",D:"Image Decentered Polycarbonate"},{l:"Код"})]}}]});
   const G_FIELD={nT:"над назальным знаком",nB:"под назальным знаком",tT:"над темпоральным знаком",tB:"под темпоральным знаком"};
   /* any:1 у бренда — строки гравировки распознаются в любом из четырёх окон (ZEISS: 275 и 20b4 под логотипом и т.п.) */
   function gPool(fam,F){const K=["nT","nB","tT","tB"],toks=[],rules=[];
@@ -1468,7 +1465,7 @@ function lookup(codes){const seen=new Set(),res=[];
         e.stopPropagation();lsPopOpen(el,LS_IDXSYMS,v=>{el.value=v;});});}
     document.addEventListener("click",e=>{if(!e.target.closest("#lsPop"))lsPopClose();});
     document.addEventListener("keydown",e=>{if(e.key==="Escape")lsPopClose();});}
-  const LS_SYMS=[["","нет знака"],["○","круг (HOYA, Essilor, Nikon и др.)"],["S","буква S (Seiko)"],["logo","логотип Seiko (складская линза)","Ⓢ"],["Z","логотип ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","логотип Shamir (овал с S)",'<span class="lslogo shlogo" role="img" aria-label="логотип Shamir"></span>'],["Sh","логотип Shamir (новый, из четырёх частей)",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","восьмёрка ∞ (Rodenstock Impression)"],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma)"],["Y","Y (Younger)"]]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
+  const LS_SYMS=[["","нет знака"],["○","круг (HOYA, Essilor, Nikon и др.)"],["S","буква S (Seiko)"],["logo","логотип Seiko (складская линза)","Ⓢ"],["Z","логотип ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","логотип Shamir (овал с S)",'<span class="lslogo shlogo" role="img" aria-label="логотип Shamir"></span>'],["Sh","логотип Shamir (новый, из четырёх частей)",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","восьмёрка ∞ (Rodenstock Impression)"],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma)"]]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
   const LS_ESSYMS=[["","очистить / вписать код вручную"],["\\ⓔ/","между косыми: Xclusive, X track, X track 3D, X track 2","\\ⓔ/"],["ⓔ","в дуге: X 4D, X 3D, X 2, X Design","ⓔ"],
     ["☀ⓔ","с лучами: Physio Extensee","☀ⓔ"],["(ⓔ","с дугой слева: Comfort Max","(ⓔ"],["ⓔ⌣","над дугами: Liberty 3.0","ⓔ⌣"],
     ["◠○","«вайфай» над кружком: Eyezen","◠○"],["◠○λ","«вайфай» и λ: Eyezen lite","◠○λ"],["M↓+","M↓ +: Myopilux Plus","M↓+"],["≺HF","≺ HF: Essilor f-360°","≺HF"]];
