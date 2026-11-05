@@ -256,6 +256,7 @@
   .ls-pop button:hover,.ls-pop button[aria-selected=true]{background:#e6eaf6}
   .ls-pop .sym{min-width:18px;width:auto;display:flex;justify-content:center;text-align:center;font-family:ui-monospace,Menlo,monospace}
   .ls-warn{color:#b3261e}
+  .ls-known{margin:8px 0 4px;padding:8px 10px;background:#eef5e9;border-radius:6px;font-weight:500}.ls-known-h{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:#5b7a4a;margin-bottom:2px}
   .ls-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}.ls-head .section-title{margin:0}
   .ls-clear{border:1px solid var(--line,#ddd);background:var(--bg,#fff);color:var(--ink,#1a1a1a);border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer}
   .ls-clear:hover{border-color:var(--ink,#1a1a1a)}
@@ -1397,10 +1398,10 @@ function lookup(codes){const seen=new Set(),res=[];
     out.push("<div><b>"+esc(full?"Полное совпадение":"Частичное совпадение: "+M.length+" "+pl(M.length,"линейка","линейки","линеек")+" ("+brands.join(", ")+")")+"</b></div>");
     if(M.length===1){const r=M[0];out.push(L("Линейка: "+r.fam.n+" ("+r.B.src+(r.fam.p&&!/стр\./.test(r.B.src)?", стр. "+r.fam.p:"")+")"));
       for(const k of ["nT","nB","tT","tB"])r.r[k].lines.forEach(s=>out.push(L(s)));}
-    else{out.push('<div style="margin-top:6px">Подходят:</div>');
-      out.push(M.slice(0,16).map(r=>L("· "+r.fam.n)).join("")+(M.length>16?L("и ещё "+(M.length-16)):""));
-      const common=[];for(const k of ["nT","nB","tT","tB"]){const ls=M.map(r=>r.r[k].lines.join("; "));if(ls[0]&&ls.every(x=>x===ls[0]))common.push(ls[0]);}
-      if(common.length)out.push('<div style="margin-top:6px">'+esc("Уже известно: "+common.join("; "))+"</div>");}
+    else{const common=[];for(const k of ["nT","nB","tT","tB"]){const ls=M.map(r=>r.r[k].lines.join("; "));if(ls[0]&&ls.every(x=>x===ls[0]))common.push(ls[0]);}
+      if(common.length)out.push('<div class="ls-known"><div class="ls-known-h">Найдено по окнам</div>'+common.map(L).join("")+"</div>");
+      out.push('<div style="margin-top:6px">Подходят:</div>');
+      out.push(M.slice(0,16).map(r=>L("· "+r.fam.n)).join("")+(M.length>16?L("и ещё "+(M.length-16)):""));}
     return out.join("");}
   function lsDecode(){const el=document.getElementById("lsDec");
     const mirNote=LS.mirror?'<div class="ls-note" style="margin:0 0 6px">Назальная сторона справа, окна прочитаны зеркально: так бывает на второй линзе пары или если смотреть на линзу с другой стороны</div>':"";
@@ -1487,17 +1488,38 @@ function lookup(codes){const seen=new Set(),res=[];
     else if(r.right>vw-8)p.style.transform="translateX(calc(-50% - "+(r.right-vw+8)+"px))";
     else p.style.transform="";}
   
+  /* текст из всех окон ищется по всей базе: код, описание знака, модель, ключевые слова */
+  function lsTextToks() {
+    const t = [];
+    for (const id of ['lsL1', 'lsL2', 'lsD1', 'lsD2']) norm(document.getElementById(id).value).split(/[\s,;]+/).forEach(w => { w = w.trim(); if (w && !t.includes(w)) t.push(w); });
+    return t;
+  }
+  function lsCenterBrands() {
+    const c = LS.center || (document.getElementById('lsS1') || {}).value || '';
+    if (!c) return null;
+    const b = new Set(GBR.filter(B => B.c === c).map(B => B.b));
+    if (c === 'S' || c === 'logo') b.add('Seiko');
+    if (c === '○') { b.add('HOYA'); b.add('Essilor'); b.add('Nikon'); }
+    return b.size ? b : null;
+  }
+  function textScore(x, toks) {
+    let s = 0;
+    const ct = x.code.split(/[\s\/+]+/).filter(Boolean);
+    for (const t of toks) {
+      if (ct.includes(t)) s += 6;
+      else if (t.length >= 2 && x.code.includes(t)) s += 3;
+      else if (t.length >= 3 && x.hay.includes(t)) s += 1;
+    }
+    return s;
+  }
   function run() {
-    const q = '', toks = [];
+    const toks = lsTextToks(), cb = lsCenterBrands();
     const res = idx.filter(x => !brand || x.r.brand === brand).map(x => {
-      const e = lsExtra(x); if (e === null) return null;
-      if (!toks.length) return lsActive() ? { x, s: e } : null;
-      for (const t of toks) if (!x.hay.includes(t)) return null;
-      let s = toks.length + e;
-      if (x.code === q) s += 5; else if (x.code.startsWith(q)) s += 2;
-      if (x.hay.includes(q)) s += 3;
-      if (norm(x.r.model).split(',')[0].trim() === q) s += 6;
-      return { x, s };
+      const e = lsExtra(x);
+      const t = toks.length && (!cb || cb.has(x.r.brand)) ? textScore(x, toks) : 0;
+      if (e === null && !t) return null;
+      if (e !== null && !t && !lsActive()) return null;
+      return { x, s: t * 2 + (e || 0) };
     }).filter(Boolean).sort((a, b) => b.s - a.s);
     const out = $('egOut');
     $('egCount').textContent = (toks.length || lsActive()) ? 'Найдено: ' + res.length : 'Записей в базе: ' + DATA.length + '. Заполните окна на схеме.';
