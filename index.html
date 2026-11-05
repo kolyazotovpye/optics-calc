@@ -270,8 +270,13 @@
   .eg-decin input { text-align: left; font-family: ui-monospace, Menlo, monospace; }
   .eg-decout { font-size: 13px; margin-top: 10px; line-height: 1.45; }
   .eg-decout b { font-weight: 500; }
-  dialog.eg-dlg { border: 0; padding: 0; max-width: 98vw; background: transparent; }
-  dialog.eg-dlg img { max-width: 98vw; max-height: 96vh; display: block; }
+  dialog.eg-dlg { border: 0; padding: 0; width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; background: transparent; overflow: auto; overscroll-behavior: contain; }
+  .eg-dlg .eg-pg { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; box-sizing: border-box; }
+  .eg-dlg img { max-width: 100%; max-height: calc(100dvh - 56px); display: block; background: #fff; cursor: zoom-in; }
+  .eg-dlg.zoom .eg-pg { display: block; }
+  .eg-dlg.zoom img { max-width: none; max-height: none; cursor: zoom-out; }
+  .eg-cap { color: #fff; font-size: 13px; text-align: center; padding: 0 44px; }
+  .eg-close { position: fixed; top: max(8px, env(safe-area-inset-top)); right: 8px; width: 44px; height: 44px; border: 0; border-radius: 22px; background: rgba(0,0,0,.55); color: #fff; font-size: 24px; line-height: 44px; cursor: pointer; z-index: 1; }
   dialog.eg-dlg::backdrop { background: rgba(0,0,0,.7); }
 </style>
 <script data-goatcounter="https://kolyazotovpye.goatcounter.com/count"
@@ -571,7 +576,7 @@
     <div class="eg-count" id="egCount"></div>
     <div id="egOut"></div>
     <p class="foot">Данные собраны из каталогов производителей. Номер страницы указан для сверки: версии каталогов могут отличаться, при сомнении проверяйте по актуальному.</p>
-    <dialog id="egDlg" class="eg-dlg"><img id="egImg" alt="Страница каталога"></dialog>
+    <dialog id="egDlg" class="eg-dlg"><button type="button" class="eg-close" id="egClose" aria-label="Закрыть">×</button><div class="eg-pg"><div class="eg-cap" id="egCap"></div><img id="egImg" alt="Страница каталога" title="Нажмите, чтобы увеличить"></div></dialog>
   </div>
 </div>
 
@@ -1460,9 +1465,19 @@ function lookup(codes){const seen=new Set(),res=[];
         <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span><span class="eg-code">${esc(r.mark_code)}</span></div>
         <div class="eg-meta">${esc(r.mark_visual)}</div>
         <div class="eg-meta">${esc(r.where)}</div>
-        <div class="eg-src"><span>${esc(r.source.replace(/\.pdf$/, ''))}, стр. ${r.page}</span>${r.image ? `<a href="#" data-img="${esc('engravings/' + r.image)}">показать страницу каталога</a>` : ''}</div>
+        <div class="eg-src">${egLinks(r)}</div>
       </div>${r.crop ? `<img class="eg-crop" src="${esc('engravings/' + r.crop)}" alt="Гравировка: ${esc(r.model)}" loading="lazy">` : ''}</div>
       </div>`; }).join('') + (res.length > 60 ? '<div class="eg-count">Показаны первые 60, уточните запрос.</div>' : '');
+  }
+  /* ссылки карточки: страница продукта, разметочная карта, таблица гравировок (если гравировка описана на отдельной странице) */
+  function egLinks(r) {
+    const src = r.source.replace(/\.pdf$/, ''), prod = r.prod || [], card = r.card || [];
+    const lk = (p, img, label) => `<a href="#" data-img="${esc('engravings/' + img)}" data-cap="${esc(src + ', стр. ' + p + ' · ' + label)}">${esc(label)}, стр. ${p}</a>`;
+    const out = prod.map(([p, img]) => lk(p, img, 'страница продукта'))
+      .concat(card.map(([p, img], i) => lk(p, img, card.length > 1 ? 'разметочная карта ' + (i + 1) : 'разметочная карта')));
+    const own = prod.concat(card).some(([p]) => p === r.page);
+    if (r.image && !own) out.push(lk(r.page, r.image, out.length ? 'таблица гравировок' : 'страница каталога'));
+    return `<span>${esc(src)}</span>` + out.join('');
   }
   function init() {
     DATA = window.ENGRAVINGS || [];
@@ -1481,7 +1496,14 @@ function lookup(codes){const seen=new Set(),res=[];
   tabBtn.addEventListener('click', load);
   $('egOut').addEventListener('click', e => {
     const a = e.target.closest('a[data-img]'); if (!a) return;
-    e.preventDefault(); $('egImg').src = a.dataset.img; $('egDlg').showModal();
+    e.preventDefault(); const d = $('egDlg'); d.classList.remove('zoom');
+    $('egImg').src = a.dataset.img; $('egCap').textContent = a.dataset.cap || ''; d.showModal(); d.scrollTo(0, 0);
+  });
+  $('egImg').addEventListener('click', e => {
+    e.stopPropagation(); const d = $('egDlg'), im = e.currentTarget, r = im.getBoundingClientRect();
+    const fx = (e.clientX - r.left) / r.width, fy = (e.clientY - r.top) / r.height;
+    d.classList.toggle('zoom');
+    if (d.classList.contains('zoom')) d.scrollTo(fx * im.offsetWidth - d.clientWidth / 2, fy * im.offsetHeight - d.clientHeight / 2);
   });
   $('egDlg').addEventListener('click', () => $('egDlg').close());
 })();
