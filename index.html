@@ -1186,7 +1186,7 @@ function lookup(codes){const seen=new Set(),res=[];
   const zf=(n,pre,t,o)=>Object.assign({n,m:n,f:{tT:o&&o.noCz?null:Z_CZ,nB:[gCodes(pre,Z_MAT,"тип "+pre+", материал"),...(o&&o.h?[Z_H]:[])],tB:t}},o||{});
   const Z_P=ff=>[G_ADD,Object.assign({},ff,{opt:1})];
   const GBR=[
-   {b:"ZEISS",c:"Z",cl:"логотип ZEISS (квадрат с диагональю)",src:"каталог ZEISS RX 2025, стр. 9.23",fams:[
+   {b:"ZEISS",c:"Z",any:1,cl:"логотип ZEISS (квадрат с диагональю)",src:"каталог ZEISS RX 2025, стр. 9.23",fams:[
     zf("ZEISS Progressive SmartLife Individual 3","SI3",Z_P(Z_FF)),zf("ZEISS Progressive SmartLife Superb","SSB",Z_P(Z_FF)),
     zf("ZEISS Progressive SmartLife Plus","SPL",Z_P(Z_FF)),zf("ZEISS Progressive SmartLife Pure","SPU",[G_ADD],{h:1}),
     zf("ZEISS Progressive Light 2 3D","L23",[G_ADD],{h:1}),
@@ -1357,9 +1357,25 @@ function lookup(codes){const seen=new Set(),res=[];
   GBR.push({b:"Younger Optics",c:"Y",src:"«Альманах гравировок», стр. 35",fams:[
     {n:"Younger Image / Adage / Trilogy",m:"Younger",f:{tB:[ADD2],nT:[GE({Y:"Y"},{opt:1})],nB:[GE({HI:"Image 1.67",I:"Image Easy Lite 1.55",D:"Image Decentered Polycarbonate"},{l:"Код"})]}}]});
   const G_FIELD={nT:"над назальным знаком",nB:"под назальным знаком",tT:"над темпоральным знаком",tB:"под темпоральным знаком"};
+  /* any:1 у бренда — строки гравировки распознаются в любом из четырёх окон (ZEISS: 275 и 20b4 под логотипом и т.п.) */
+  function gPool(fam,F){const K=["nT","nB","tT","tB"],toks=[],rules=[];
+    for(const k of K)String(F[k]||"").trim().split(/[\s,;]+/).filter(Boolean).forEach(t=>toks.push(t));
+    for(const k of K)(fam.f[k]||[]).forEach((rule,i)=>rules.push({rule,k,i}));
+    const used=new Set(),as=[];
+    const go=i=>{if(i===toks.length)return true;
+      const c=[];for(let j=0;j<rules.length;j++){if(used.has(j))continue;const x=gTok(rules[j].rule,toks[i],true);if(x)c.push([j,x]);}
+      c.sort((a,b)=>b[1].full-a[1].full);
+      for(const [j,x] of c){used.add(j);as[i]=[j,x];if(go(i+1))return true;used.delete(j);}
+      return false;};
+    if(!go(0))return null;
+    const r={};for(const k of K)r[k]={ok:1,full:1,lines:[]};
+    as.map(([j,x])=>({R:rules[j],x})).sort((a,b)=>K.indexOf(a.R.k)-K.indexOf(b.R.k)||a.R.i-b.R.i)
+      .forEach(({R,x})=>{const o=r[R.k];o.full=o.full&&x.full;if(x.line)o.lines.push((R.rule.l?R.rule.l+": ":"")+x.line);});
+    return r;}
   function gMatch(F,center){const res=[];
     for(const B of GBR){if(center&&center!==B.c)continue;
-      for(const fam of B.fams){const r={};let ok=1,full=1;
+      for(const fam of B.fams){if(B.any){const r=gPool(fam,F);if(r)res.push({B,fam,r,full:["nT","nB","tT","tB"].every(k=>r[k].full)&&!fam.nofull});continue;}
+        const r={};let ok=1,full=1;
         for(const k of ["nT","nB","tT","tB"]){const x=gField(fam.f[k],F[k]);if(!x){ok=0;break;}r[k]=x;full=full&&x.full;}
         if(ok)res.push({B,fam,r,full:full&&!fam.nofull});}}
     let out=res;for(const k of ["nT","nB","tT","tB"]){if(out.some(x=>x.r[k].full&&x.r[k].lines.length)&&out.some(x=>!x.r[k].full))out=out.filter(x=>x.r[k].full);}
