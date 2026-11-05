@@ -1546,7 +1546,7 @@ function lookup(codes){const seen=new Set(),res=[];
         ${r.crop ? '' : `<div class="eg-meta">${esc(r.mark_visual)}</div>`}
         <div class="eg-meta">${esc(r.where)}</div>
         <div class="eg-src">${egLinks(r)}</div>
-      </div>${r.crop ? `<img class="eg-crop" src="${esc('engravings/' + r.crop)}"${/@2x\./.test(r.crop) ? ` onload="this.style.width=(this.naturalWidth/2)*Math.min(1,40/(this.naturalHeight/2))+'px'"` : ''} alt="Гравировка: ${esc(r.model)}" loading="lazy">` : ''}</div>
+      </div>${r.crop ? `<img class="eg-crop" src="${esc('engravings/' + r.crop)}"${/@2x\./.test(r.crop) ? ` data-max="${r.crop_max || 40}" onload="this.style.width=(this.naturalWidth/2)*Math.min(1,this.dataset.max/(this.naturalHeight/2))+'px'"` : ''} alt="Гравировка: ${esc(r.model)}" loading="lazy">` : ''}</div>
       </div>`; }).join('') + (res.length > 60 ? '<div class="eg-count">Показаны первые 60, уточните запрос.</div>' : '');
   }
   /* ссылки карточки: страница продукта, разметочная карта, таблица гравировок (если гравировка описана на отдельной странице) */
