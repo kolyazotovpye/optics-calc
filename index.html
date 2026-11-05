@@ -313,6 +313,15 @@
     .ls-in.w { min-width: 62px; min-height: 26px; }
     .ls-in.s { min-width: 30px; min-height: 26px; }
   }
+  /* узкий экран: окна не должны наезжать друг на друга (шаг между ними на схеме ~25 px) */
+  @media (max-width: 600px) {
+    .ls-lens { margin-left: -6px; margin-right: -6px; }
+    .ls-in.w, .ls-in.s { min-height: 0; height: 22px; line-height: 20px; }
+    .ls-in.w { min-width: 58px; }
+    .ls-in.s { min-width: 28px; }
+    #lsL1, #lsL2 { top: 38.2% !important; }
+    #lsD1, #lsD2 { top: 65.2% !important; }
+  }
 </style>
 <script data-goatcounter="https://kolyazotovpye.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
