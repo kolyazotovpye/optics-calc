@@ -1322,7 +1322,7 @@ function lookup(codes){const seen=new Set(),res=[];
     nk("SeeMax Infinite",119,nkc(["∩","П"],[""]),1),
     nk("Lite SP Viewfit / Lite SP",120,nkc("n",[""]),1)]});
   /* Essilor / Varilux / Kodak (ELO 2026, Альманах гравировок): у носа знак дизайна (графика) + код материала, у виска аддидация */
-  const ES_MAT=GE({"5":"Orma 1.5","P":"Airwear 1.59","6":"Ormix 1.6","π":"Stylis 1.67","п":"Stylis 1.67 (π)","74":"Lineis 1.74","8":"стекло 1.8"},{l:"Материал"});
+  const ES_MAT=GE({"5":"Orma 1.5","P":"Airwear 1.59","6":"Ormix 1.6","π":"Stylis 1.67","п":"Stylis 1.67 (π)","74":"Lineis 1.74","8":"стекло 1.8","✳":"Trivex 1.53 (TREXA)","*":"Trivex 1.53 (TREXA)","✱":"Trivex 1.53 (TREXA)"},{l:"Материал"});
   /* разметочные карты ELO 2026 (стр. 5.18–5.37): у носа знак дизайна + материал (на картах 5 или M), над темпоральным кругом вариант, под ним аддидация */
   const ES_SL=GE({"\\ⓔ/":"знак ⓔ между косыми"},{l:"Знак"}),ES_E=GE({"ⓔ":"знак ⓔ в дуге"},{l:"Знак"});
   const ES_M=Object.assign({},ES_MAT,{e:Object.assign({M:"M (на карте материал показан буквой M)"},ES_MAT.e),opt:1});
@@ -1546,11 +1546,13 @@ function lookup(codes){const seen=new Set(),res=[];
     const set=(o)=>{Object.assign(LS,o);return true;};
     const genC=GBR.some(B=>B.c===c);
     const esMark=["lsL1","lsL2","lsD1","lsD2"].some(id=>/ⓔ|◠○|M↓|≺HF/.test(lsRaw(id)));
-    const tryHoya=(fullOnly)=>{if((c&&c!=="○")||esMark)return false;const O=lsOrient();const h=hyParse(O.F.nB),M=h?null:O.M;
+    const hoyaLike=["lsL1","lsL2","lsD1","lsD2"].every(id=>/^[\sA-Za-z0-9()+\-–]*$/.test(lsRaw(id)));
+    const tryHoya=(fullOnly)=>{if((c&&c!=="○")||esMark||!hoyaLike)return false;const O=lsOrient();const h=hyParse(O.F.nB),M=h?null:O.M;
       if(h)return set({F:O.F,mirror:O.mir,hoya:h});
       if(!fullOnly&&M&&M.cands.length)return set({F:O.F,mirror:O.mir,hy:Object.assign(M,{bases:new Set(M.cands.map(x=>x.base))})});return false;};
     let allowConf=false;
-    const trySeiko=(fullOnly)=>{if((c&&c!=="S")||esMark)return false;const K=skOrient();if(!K)return false;
+    const seikoLike=["lsL1","lsL2","lsD1","lsD2"].every(id=>/^[\sA-Za-z0-9()+\-–◇□△▽]*$/.test(lsRaw(id)));
+    const trySeiko=(fullOnly)=>{if((c&&c!=="S")||esMark||!seikoLike)return false;const K=skOrient();if(!K)return false;
       const full=K.M.cands.length===1&&hyClean(K.M.F.tT)===K.M.cands[0].code;
       if(fullOnly&&!full)return false;if(!K.M.cands.length&&(fullOnly||(c!=="S"&&!allowConf)))return false;
       return set({F:K.M.F,mirror:K.mir,sk:Object.assign(K.M,{toks:new Set(K.M.cands.map(x=>x.f.tok)),shape:skShape(K.M.F.nB)})});};
@@ -1559,7 +1561,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if(tryHoya(true)||tryGen(true)||trySeiko(true))return;
     if(tryHoya(false)||trySeiko(false)||tryGen(false))return;
     allowConf=true;if(!c&&trySeiko(false))return;
-    if(!c){const O=lsOrient();if(O.M)set({F:O.F,mirror:O.mir,hy:Object.assign(O.M,{bases:new Set()})});}}
+    if(!c&&hoyaLike){const O=lsOrient();if(O.M)set({F:O.F,mirror:O.mir,hy:Object.assign(O.M,{bases:new Set()})});}}
   const lsUpd=()=>{lsBF="";lsSG="";lsSync();lsDecode();run();};
   document.getElementById("lsDec").addEventListener("click",e=>{const b=e.target.closest(".ls-chip");if(!b)return;
     if(b.dataset.sg!==undefined)lsSG=b.dataset.sg;else lsBF=b.dataset.bf;lsDecode();run();});
