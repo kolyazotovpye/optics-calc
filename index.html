@@ -1370,19 +1370,19 @@ function lookup(codes){const seen=new Set(),res=[];
   GBR.push({b:"Rupp+Hubrach",c:"○",src:"каталог Rupp+Hubrach, стр. 14",fams:[{n:"Rupp+Hubrach (дизайн по знаку)",m:"r+h",f:{nB:[RH_DES,RH_MAT],tB:[ADD2]}}]});
   /* Rodenstock («Альманах гравировок», стр. 20–22): в центре функциональная гравировка, у виска дополнительная гравировка */
   const RD_ADD=Object.assign({},ADD2,{opt:1});
-  const rd=(c,n,codes)=>({n:"Rodenstock "+n,m:n.split(" / ")[0],f:{tB:[GE(codes,{l:"Доп. гравировка"}),RD_ADD],tT:[GE(codes,{l:"Доп. гравировка"})]}});
+  const rd=(c,n,codes,names)=>({n:"Rodenstock "+n,m:names?names.join(" / "):n.split(" / ")[0],f:{tB:[GE(codes,{l:"Доп. гравировка"}),RD_ADD],tT:[GE(codes,{l:"Доп. гравировка"})]}});
   GBR.push({b:"Rodenstock",c:"∞",src:"«Альманах гравировок», стр. 20–22",fams:[
     rd("∞","Impression FreeSign 3",{"DF/DN/3":"FreeSign 3","AC/DN/3":"FreeSign 3 Active","AL/DN/3":"FreeSign 3 Allround","EX/DN/3":"FreeSign 3 Expert"}),
     rd("∞","Impression 2",{"DN/2":"Impression 2 V","X/2":"Impression 2 XS","M/2":"Impression 2 M","L/2":"Impression 2 L","RD/2":"Impression 2 Road"}),
     rd("∞","Impression Hyperop / Myop",{H:"Hyperop",M:"Myop",X:"XS"}),
-    rd("∞","Impression Mono 2 / MonoPlus 2",{"2":"Mono 2","RD":"Road 2",A:"MonoPlus 2","+0.5":"MonoPlus 2 (+0,5)","+0.8":"MonoPlus 2 (+0,8)"}),
+    rd("∞","Impression Mono 2 / MonoPlus 2",{"2":"Mono 2","RD":"Road 2",A:"MonoPlus 2","+0.5":"MonoPlus 2 (+0,5)","+0.8":"MonoPlus 2 (+0,8)"},["Impression Mono 2","Impression MonoPlus 2"]),
     rd("∞","Impression Ergo 2 / Ergo FS 2",{"DM/DN/2":"Ergo FS 2","B/DN/2":"Ergo 2 Book","P/DN/2":"Ergo 2 PC","R/DN/2":"Ergo 2 Room"})]});
   GBR.push({b:"Rodenstock",c:"○",src:"«Альманах гравировок», стр. 20–22",fams:[
-    rd("○","Multigressiv MyView 2 / Road 2",{L:"MyView 2 L (коридор 18 мм)",M:"MyView 2 M (коридор 16 мм)",X:"MyView 2 XS (коридор 14 мм)",RD:"Road 2"}),
-    rd("○","Multigressiv Mono 2 / Ergo 2",{"2":"Mono 2","RD":"Road 2","B/2":"Ergo 2 Book","P/2":"Ergo 2 PC","R/2":"Ergo 2 Room"})]});
+    rd("○","Multigressiv MyView 2 / Road 2",{L:"MyView 2 L (коридор 18 мм)",M:"MyView 2 M (коридор 16 мм)",X:"MyView 2 XS (коридор 14 мм)",RD:"Road 2"},["Multigressiv MyView 2","Multigressiv Road 2"]),
+    rd("○","Multigressiv Mono 2 / MonoPlus 2 / Ergo 2",{"2":"Mono 2","RD":"Road 2",A:"MonoPlus 2","B/2":"Ergo 2 Book","P/2":"Ergo 2 PC","R/2":"Ergo 2 Room"},["Multigressiv Mono 2","Multigressiv MonoPlus 2","Multigressiv Ergo 2"])]});
   GBR.push({b:"Rodenstock",c:"◌",src:"«Альманах гравировок», стр. 20–22",fams:[
-    rd("◌","Progressiv PureLife Free 2 / Life Free 2",{PL:"PureLife Free 2 L (18 мм)",PM:"PureLife Free 2 M (16 мм)",PX:"PureLife Free 2 XS (14 мм)",LL:"Life Free 2 L (18 мм)",LM:"Life Free 2 M (16 мм)",LX:"Life Free 2 XS (14 мм)"}),
-    rd("◌","Progressiv Ergo 2 / Perfalit MonoPlus 2",{B:"Progressiv Ergo 2 Book",P:"Progressiv Ergo 2 PC",R:"Progressiv Ergo 2 Room"})]});
+    rd("◌","Progressiv PureLife Free 2 / Life Free 2",{PL:"PureLife Free 2 L (18 мм)",PM:"PureLife Free 2 M (16 мм)",PX:"PureLife Free 2 XS (14 мм)",LL:"Life Free 2 L (18 мм)",LM:"Life Free 2 M (16 мм)",LX:"Life Free 2 XS (14 мм)"},["Progressiv PureLife","Progressiv Life Free 2"]),
+    rd("◌","Progressiv Ergo 2 / Perfalit MonoPlus 2",{B:"Progressiv Ergo 2 Book",P:"Progressiv Ergo 2 PC",R:"Progressiv Ergo 2 Room"},["Progressiv Ergo 2","Perfalit / MonoPlus 2"])]});
   /* Ital Lenti (каталог «Premium Armonie», 2023): шифр лазерной маркировки, стр. 96–97. Буква коридора + код + T/Z (или B/M/R у Twice Office), в любом окне, слитно или раздельно */
   const IL_SRC="каталог Ital Lenti «Premium Armonie» (2023), стр. 96–97";
   const IL_TZ={T:"T — Transitions XTRActive",Z:"Z — поляризация"};
@@ -1590,9 +1590,15 @@ function lookup(codes){const seen=new Set(),res=[];
       const full=K.M.cands.length===1&&hyClean(K.M.F.tT)===K.M.cands[0].code;
       if(fullOnly&&!full)return false;if(!K.M.cands.length&&(fullOnly||(c!=="S"&&!allowConf)))return false;
       return set({F:K.M.F,mirror:K.mir,sk:Object.assign(K.M,{toks:new Set(K.M.cands.map(x=>x.f.tok)),shape:skShape(K.M.F.nB)})});};
+    const genHasCards=G=>{const prev=LS.gen;LS.gen=G;const n=idx.filter(x=>gFilter(x)!==null).length;LS.gen=prev;return n>0;};
     const tryGen=(fullOnly)=>{if(c&&!genC)return false;const G=gOrient(c);if(!G||!G.M.length)return false;
+      if(fullOnly&&!genHasCards(G))return false;
       if(fullOnly&&!(G.M.length===1&&G.M[0].full))return false;return set({F:G.F,mirror:G.mir,gen:G});};
     if(tryHoya(true)||tryGen(true)||trySeiko(true))return;
+    /* Знак выбран и какой-то бренд дал точное совпадение: показываем его, а не частичный вариант HOYA/Seiko. */
+    const tryGenAnyFull=()=>{if(!c||(c&&!genC))return false;const G=gOrient(c);if(!G||!G.M.some(x=>x.full)||!genHasCards(G))return false;
+      return set({F:G.F,mirror:G.mir,gen:G});};
+    if(tryGenAnyFull())return;
     if(tryHoya(false)||trySeiko(false)||tryGen(false))return;
     allowConf=true;if(!c&&trySeiko(false))return;
     if(!c&&hoyaLike){const O=lsOrient();if(O.M)set({F:O.F,mirror:O.mir,hy:Object.assign(O.M,{bases:new Set()})});}}
