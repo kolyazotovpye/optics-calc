@@ -1322,7 +1322,7 @@ function lookup(codes){const seen=new Set(),res=[];
     nk("SeeMax Infinite",119,nkc(["∩","П"],[""]),1),
     nk("Lite SP Viewfit / Lite SP",120,nkc("n",[""]),1)]});
   /* Essilor / Varilux / Kodak (ELO 2026, Альманах гравировок): у носа знак дизайна (графика) + код материала, у виска аддидация */
-  const ES_MAT=GE({"5":"Orma 1.5","P":"Airwear 1.59","6":"Ormix 1.6","π":"Stylis 1.67","п":"Stylis 1.67 (π)","74":"Lineis 1.74","8":"стекло 1.8"},{l:"Материал"});
+  const ES_MAT=GE({"5":"Orma 1.5","P":"Airwear 1.59","6":"Ormix 1.6","π":"Stylis 1.67","п":"Stylis 1.67 (π)","74":"Lineis 1.74","8":"стекло 1.8","✳":"Trivex 1.53 (TREXA)","*":"Trivex 1.53 (TREXA)","✱":"Trivex 1.53 (TREXA)"},{l:"Материал"});
   /* разметочные карты ELO 2026 (стр. 5.18–5.37): у носа знак дизайна + материал (на картах 5 или M), над темпоральным кругом вариант, под ним аддидация */
   const ES_SL=GE({"\\ⓔ/":"знак ⓔ между косыми"},{l:"Знак"}),ES_E=GE({"ⓔ":"знак ⓔ в дуге"},{l:"Знак"});
   const ES_M=Object.assign({},ES_MAT,{e:Object.assign({M:"M (на карте материал показан буквой M)"},ES_MAT.e),opt:1});
@@ -1382,6 +1382,28 @@ function lookup(codes){const seen=new Set(),res=[];
   GBR.push({b:"Rodenstock",c:"◌",src:"«Альманах гравировок», стр. 20–22",fams:[
     rd("◌","Progressiv PureLife Free 2 / Life Free 2",{PL:"PureLife Free 2 L (18 мм)",PM:"PureLife Free 2 M (16 мм)",PX:"PureLife Free 2 XS (14 мм)",LL:"Life Free 2 L (18 мм)",LM:"Life Free 2 M (16 мм)",LX:"Life Free 2 XS (14 мм)"}),
     rd("◌","Progressiv Ergo 2 / Perfalit MonoPlus 2",{B:"Progressiv Ergo 2 Book",P:"Progressiv Ergo 2 PC",R:"Progressiv Ergo 2 Room"})]});
+  /* Rodenstock, первое поколение: «Functional Engravings of Rodenstock Lenses» (2009). Доп. гравировка, база, индекс и аддидация — в любом окне */
+  const RF_SRC="Rodenstock Functional Engravings (2009)";
+  const RF_NUM=GR(/^\d{1,3}$/,m=>m[0],/^\d$/,{opt:1,l:"Цифры (база, индекс, аддидация)"});
+  const rfc=(e,o)=>GE(e,Object.assign({l:"Доп. гравировка"},o||{}));
+  const rf=(n,codes)=>({n:"Rodenstock "+n+" (2009)",m:n,f:{nT:codes&&codes.length?codes:null,nB:[RF_NUM,Object.assign({},RF_NUM)],tB:[RD_ADD]}});
+  GBR.push({b:"Rodenstock",c:"∞",any:1,src:RF_SRC,fams:[
+    rf("Impression FreeSign",null),rf("Impression",null),rf("Impression XS",[rfc({X:"X — XS"})]),rf("Impression Hyperop",[rfc({H:"H — Hyperop"})]),
+    rf("Impression XS Hyperop",[rfc({X:"X — XS"}),rfc({H:"H — Hyperop"})]),rf("Impression FashionCurved",[rfc({F:"F — FashionCurved"})]),
+    rf("Impression Sport",[rfc({S:"S — Sport"}),rfc({X:"X — версия с клипсой"},{opt:1})]),
+    rf("Impression Mono",[rfc({"-":"минус — Mono","−":"минус — Mono","–":"минус — Mono"})]),
+    rf("Impression Mono Sport",[rfc({"-":"минус — Mono","−":"минус — Mono","–":"минус — Mono"}),rfc({S:"S — Sport"})]),
+    rf("Impression 40",[rfc({"4":"4 — Impression 40"}),rfc({N:"N"})]),rf("Impression 80",[rfc({"8":"8 — Impression 80"}),rfc({N:"N"})])]});
+  GBR.push({b:"Rodenstock",c:"○",any:1,src:RF_SRC,fams:[
+    rf("Multigressiv MyView L",[rfc({L:"L — коридор 18 мм"})]),rf("Multigressiv MyView M",[rfc({M:"M — коридор 16 мм"})]),
+    rf("Multigressiv MyView XS",[rfc({X:"X — коридор 14 мм"})]),rf("Multigressiv ILT",null),rf("Multigressiv ILT XS",[rfc({X:"X — коридор 14 мм"})])]});
+  GBR.push({b:"Rodenstock",c:"▭",any:1,src:RF_SRC,fams:[rf("Progressiv PureLife",[rfc({L:"L — коридор 18 мм"})]),rf("Progressiv PureLife XS",null)]});
+  GBR.push({b:"Rodenstock",c:"dia",any:1,src:RF_SRC,fams:[rf("Progressiv life 2",[rfc({"2":"2 — life 2"})])]});
+  GBR.push({b:"Rodenstock",c:"rect",any:1,src:RF_SRC,fams:[rf("Progressiv life XS",null)]});
+  GBR.push({b:"Rodenstock",c:"fdia",any:1,src:RF_SRC,fams:[rf("Progressiv AT",null)]});
+  GBR.push({b:"Rodenstock",c:"oval",any:1,src:RF_SRC,fams:[
+    {n:"Rodenstock Nexyma 40 (2009)",m:"Nexyma 40",f:{nT:[rfc({N4:"N4 — Nexyma 40, дегрессия 1,00"})],nB:[RF_NUM,Object.assign({},RF_NUM)]}},
+    {n:"Rodenstock Nexyma 80 (2009)",m:"Nexyma 80",f:{nT:[rfc({N8:"N8 — Nexyma 80"}),rfc({A:"A — дегрессия 0,80",B:"B — дегрессия 1,50"},{opt:1})],nB:[RF_NUM,Object.assign({},RF_NUM)]}}]});
   GBR.push({b:"Rodenstock",c:"▭",src:"«Альманах гравировок», стр. 22",fams:[
     rd("▭","Nexyma",{N4:"Nexyma 40, дегрессия 1,0",N8A:"Nexyma 80 A, дегрессия 0,8",N8B:"Nexyma 80 B, дегрессия 1,5"})]});
   const G_FIELD={nT:"над назальным знаком",nB:"под назальным знаком",tT:"над темпоральным знаком",tB:"под темпоральным знаком"};
@@ -1524,11 +1546,13 @@ function lookup(codes){const seen=new Set(),res=[];
     const set=(o)=>{Object.assign(LS,o);return true;};
     const genC=GBR.some(B=>B.c===c);
     const esMark=["lsL1","lsL2","lsD1","lsD2"].some(id=>/ⓔ|◠○|M↓|≺HF/.test(lsRaw(id)));
-    const tryHoya=(fullOnly)=>{if((c&&c!=="○")||esMark)return false;const O=lsOrient();const h=hyParse(O.F.nB),M=h?null:O.M;
+    const hoyaLike=["lsL1","lsL2","lsD1","lsD2"].every(id=>/^[\sA-Za-z0-9()+\-–]*$/.test(lsRaw(id)));
+    const tryHoya=(fullOnly)=>{if((c&&c!=="○")||esMark||!hoyaLike)return false;const O=lsOrient();const h=hyParse(O.F.nB),M=h?null:O.M;
       if(h)return set({F:O.F,mirror:O.mir,hoya:h});
       if(!fullOnly&&M&&M.cands.length)return set({F:O.F,mirror:O.mir,hy:Object.assign(M,{bases:new Set(M.cands.map(x=>x.base))})});return false;};
     let allowConf=false;
-    const trySeiko=(fullOnly)=>{if((c&&c!=="S")||esMark)return false;const K=skOrient();if(!K)return false;
+    const seikoLike=["lsL1","lsL2","lsD1","lsD2"].every(id=>/^[\sA-Za-z0-9()+\-–◇□△▽]*$/.test(lsRaw(id)));
+    const trySeiko=(fullOnly)=>{if((c&&c!=="S")||esMark||!seikoLike)return false;const K=skOrient();if(!K)return false;
       const full=K.M.cands.length===1&&hyClean(K.M.F.tT)===K.M.cands[0].code;
       if(fullOnly&&!full)return false;if(!K.M.cands.length&&(fullOnly||(c!=="S"&&!allowConf)))return false;
       return set({F:K.M.F,mirror:K.mir,sk:Object.assign(K.M,{toks:new Set(K.M.cands.map(x=>x.f.tok)),shape:skShape(K.M.F.nB)})});};
@@ -1537,7 +1561,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if(tryHoya(true)||tryGen(true)||trySeiko(true))return;
     if(tryHoya(false)||trySeiko(false)||tryGen(false))return;
     allowConf=true;if(!c&&trySeiko(false))return;
-    if(!c){const O=lsOrient();if(O.M)set({F:O.F,mirror:O.mir,hy:Object.assign(O.M,{bases:new Set()})});}}
+    if(!c&&hoyaLike){const O=lsOrient();if(O.M)set({F:O.F,mirror:O.mir,hy:Object.assign(O.M,{bases:new Set()})});}}
   const lsUpd=()=>{lsBF="";lsSG="";lsSync();lsDecode();run();};
   document.getElementById("lsDec").addEventListener("click",e=>{const b=e.target.closest(".ls-chip");if(!b)return;
     if(b.dataset.sg!==undefined)lsSG=b.dataset.sg;else lsBF=b.dataset.bf;lsDecode();run();});
@@ -1560,7 +1584,7 @@ function lookup(codes){const seen=new Set(),res=[];
         e.stopPropagation();lsPopOpen(el,LS_IDXSYMS,v=>{el.value=v;});});}
     document.addEventListener("click",e=>{if(!e.target.closest("#lsPop"))lsPopClose();});
     document.addEventListener("keydown",e=>{if(e.key==="Escape")lsPopClose();});}
-  const LS_SYMS=[["","нет знака"],["○","круг (HOYA, Essilor, Nikon и др.)"],["S","буква S (Seiko)"],["logo","Seiko монофокальные","SV"],["Z","логотип ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","старый логотип Shamir",'<span class="lslogo shlogo" role="img" aria-label="логотип Shamir"></span>'],["Sh","логотип Shamir",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","восьмёрка ∞ (Rodenstock Impression)"],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma)"]]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
+  const LS_SYMS=[["","нет знака"],["○","круг (HOYA, Essilor, Nikon и др.)"],["S","буква S (Seiko)"],["logo","Seiko монофокальные","SV"],["Z","логотип ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","старый логотип Shamir",'<span class="lslogo shlogo" role="img" aria-label="логотип Shamir"></span>'],["Sh","логотип Shamir",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","восьмёрка ∞ (Rodenstock Impression)"],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma, Progressiv PureLife)"],["dia","ромб (Rodenstock Progressiv life 2)","◇"],["rect","прямоугольник (Rodenstock Progressiv life XS)","▬"],["fdia","плоский ромб (Rodenstock Progressiv AT)","◊"],["oval","овал (Rodenstock Nexyma, 2009)","⬭"]]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
   const LS_ESSYMS=[["","очистить / вписать код вручную"],["\\ⓔ/","между косыми: Xclusive, X track, X track 3D, X track 2","\\ⓔ/"],["ⓔ","в дуге: X 4D, X 3D, X 2, X Design","ⓔ"],
     ["☀ⓔ","с лучами: Physio Extensee","☀ⓔ"],["(ⓔ","с дугой слева: Comfort Max","(ⓔ"],["ⓔ⌣","над дугами: Liberty 3.0","ⓔ⌣"],
     ["◠○","«вайфай» над кружком: Eyezen","◠○"],["◠○λ","«вайфай» и λ: Eyezen lite","◠○λ"],["M↓+","M↓ +: Myopilux Plus","M↓+"],["≺HF","≺ HF: Essilor f-360°","≺HF"]];
