@@ -1206,7 +1206,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if(rule.e){if(rule.e[t]!==undefined)return {full:1,line:rule.e[t]};
       const u=gUp(t),k=Object.keys(rule.e).find(x=>gUp(x)===u);if(k)return {full:1,line:rule.e[k]};
       if(last&&Object.keys(rule.e).some(x=>gUp(x).startsWith(u)))return {full:0};return null;}
-    const m=String(t).match(rule.re);if(m)return {full:1,line:rule.d(m)};
+    const m=String(t).match(rule.re);if(m){const l=rule.d(m);if(l===null)return null;return {full:1,line:l};}
     if(last&&rule.px){const P=gUp(rule.px),u=gUp(t);if(P.startsWith(u)||(u.startsWith(P)&&/^\d$/.test(u.slice(P.length))))return {full:0};return null;}
     if(last&&rule.pre&&rule.pre.test(t))return {full:0};return null;}
   function gField(spec,val){let toks=String(val||"").trim().split(/[\s,;]+/).filter(Boolean);
@@ -1400,11 +1400,13 @@ function lookup(codes){const seen=new Set(),res=[];
   /* Ital Lenti (каталог «Premium Armonie», 2023): шифр лазерной маркировки, стр. 96–97. Буква коридора + код + T/Z (или B/M/R у Twice Office), в любом окне, слитно или раздельно */
   const IL_SRC="каталог Ital Lenti «Premium Armonie» (2023), стр. 96–97";
   const IL_TZ={T:"T — Transitions XTRActive",Z:"Z — поляризация"};
+  /* над логотипом Ital Lenti: аддидация тремя цифрами, 150 = 1,50 (0,75–4,00, шаг 0,25) */
+  const IL_ADD=GR(/^0?([0-4])(00|25|50|75)$/,m=>{const v=+m[1]+ +m[2]/100;return v>=0.75&&v<=4?m[0]+" — аддидация "+m[1]+","+m[2]+" дптр":null;},/^0?[0-4]\d?$/,{opt:1});
   const ILR={};
   const ilf=(n,codes,corr,suf)=>{ILR[n]={corr,suf};const cs=Object.keys(codes).sort((a,b)=>b.length-a.length),esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
     const cl=Object.keys(corr),sl=Object.keys(suf),re=new RegExp("^("+(cl.length?"["+cl.join("")+"]":"(?!)")+")?("+cs.map(esc).join("|")+")("+(sl.length?"["+sl.join("")+"]":"(?!)")+")?$","i");
     const glued=GR(re,m=>{const c=cs.find(x=>x.toUpperCase()===m[2].toUpperCase()),k=m[1]&&m[1].toUpperCase();return [k?k+" — коридор "+corr[k]+" мм":"",c+" — "+n+", "+codes[c],m[3]?suf[m[3].toUpperCase()]:""].filter(Boolean);},/^[A-Za-z]{1,6}$/,{opt:1});
-    return {n:"Ital Lenti "+n,m:n,f:{nT:[glued,GE(Object.fromEntries(cl.map(k=>[k,k+" — коридор "+corr[k]+" мм"])),{opt:1}),GE(Object.fromEntries(cs.map(k=>[k,k+" — "+n+", "+codes[k]])),{opt:1}),GE(suf,{opt:1})]}};};
+    return {n:"Ital Lenti "+n,m:n,f:{nT:[glued,GE(Object.fromEntries(cl.map(k=>[k,k+" — коридор "+corr[k]+" мм"])),{opt:1}),GE(Object.fromEntries(cs.map(k=>[k,k+" — "+n+", "+codes[k]])),{opt:1}),GE(suf,{opt:1})],tT:[IL_ADD]}};};
   GBR.push({b:"Ital Lenti",c:"itl",any:1,src:IL_SRC,fams:[
     ilf("Twice Armonie",{"AWR": "1,50 Clear/Transitions/XTRActive/Polar", "AWH": "1,60 Clear/Transitions/XTRActive/Polar", "AWF": "1,67 Clear/Transitions/XTRActive/Polar", "AWK": "1,74 Clear/Transitions", "AWA": "Trilogy Clear/Transitions/XTRActive", "AWHU": "1,60 Clear UV Tech", "AWFU": "1,67 Clear UV Tech", "AWKU": "1,74 Clear UV Tech"},{"A": "18", "B": "17", "C": "16", "D": "15", "E": "14", "F": "13", "G": "12"},{"T": "T — Transitions XTRActive", "Z": "Z — поляризация"}),
     ilf("Twice",{"WR": "1,50 Clear/Transitions/XTRActive/Polar", "WH": "1,60 Clear/Transitions/XTRActive/Polar", "WF": "1,67 Clear/Transitions/XTRActive/Polar", "WK": "1,74 Clear/Transitions", "WA": "Trilogy Clear/Transitions/XTRActive"},{"A": "18", "B": "17", "C": "16", "D": "15", "E": "14", "F": "13", "G": "12"},{"T": "T — Transitions XTRActive", "Z": "Z — поляризация"}),
@@ -1751,6 +1753,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if (!n) return '';
     const { suf } = ILR[n], row = (c, t) => `<div class="ls-rule"><code>${esc(c)}</code><span>${esc(t)}</span></div>`;
     const rows = [];
+    rows.push(row('150', 'над логотипом: аддидация, 150 = 1,50 дптр'));
     if (r.mark_code) rows.push(row(r.mark_code, 'код линзы'));
     Object.entries(suf).forEach(([k, v]) => rows.push(row(k, 'после кода: ' + String(v).replace(/^\S+ — /, ''))));
     return `<div class="eg-rules"><div class="eg-rules-h">Правила</div>${rows.join('')}</div>`;
