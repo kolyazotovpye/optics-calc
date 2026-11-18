@@ -235,8 +235,16 @@
   .eg-model { font-size: 14px; font-weight: 500; }
   .eg-code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: #f0f0ec; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
   .eg-meta { font-size: 12px; color: #777; margin-top: 4px; line-height: 1.4; }
-  .eg-src { font-size: 12px; color: #999; margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .eg-src { font-size: 12px; margin-top: 10px; padding: 8px 10px; background: #fafaf8; border: 0.5px solid #e6e6e1; border-radius: 8px; }
+  .eg-src-h { color: #999; margin-bottom: 2px; }
+  .eg-src-l { display: flex; gap: 4px 12px; flex-wrap: wrap; }
   .eg-src a { color: #185fa5; }
+  .eg-rules { margin-top: 8px; font-size: 12px; line-height: 1.55; color: #555; }
+  .eg-rules-h, .ls-rules-h { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #999; margin-bottom: 2px; }
+  .eg-alt { margin-top: 10px; }
+  .eg-alt img { display: block; height: 52px; width: auto; margin-top: 4px; }
+  .ls-rule { display: flex; gap: 8px; align-items: baseline; }
+  .ls-rule code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; background: #f0f0ec; border-radius: 4px; padding: 0 5px; min-width: 22px; text-align: center; flex: none; }
   .eg-row { display: flex; gap: 14px; align-items: flex-start; }
   .eg-main { flex: 1; min-width: 0; }
   img.eg-crop { flex: none; width: auto; height: auto; border-radius: 4px; background: #fff; }
@@ -304,7 +312,7 @@
     .ls-pop .sym { min-width: 26px; font-size: 17px; }
     .ls-title { line-height: 1.5; margin-bottom: 10px; }
     .ls-lens { margin: 20px auto 24px; }
-    .eg-src { gap: 4px 12px; }
+    .eg-src-l { gap: 4px 12px; }
     .eg-src a { display: inline-block; padding: 5px 0; font-size: 13px; }
   }
   /* сенсорный экран: поля не мельче 16px (иначе iPhone приближает страницу при вводе), окна на схеме крупнее */
@@ -1203,7 +1211,7 @@ function lookup(codes){const seen=new Set(),res=[];
       if(i===toks.length)return {ok:1,full:full&&spec.slice(j).every(r=>r.opt),lines};
       if(j===spec.length)return null;
       const r=gTok(spec[j],toks[i],i===toks.length-1);
-      if(r){const x=go(i+1,j+1,r.line?[...lines,(spec[j].l?spec[j].l+": ":"")+r.line]:lines,full&&r.full);if(x)return x;}
+      if(r){const add=Array.isArray(r.line)?r.line:r.line?[(spec[j].l?spec[j].l+": ":"")+r.line]:[];const x=go(i+1,j+1,[...lines,...add],full&&r.full);if(x)return x;}
       return spec[j].opt?go(i,j+1,lines,full):null;};
     return go(0,0,[],1);}
   /* общие правила */
@@ -1386,10 +1394,11 @@ function lookup(codes){const seen=new Set(),res=[];
   /* Ital Lenti (каталог «Premium Armonie», 2023): шифр лазерной маркировки, стр. 96–97. Буква коридора + код + T/Z (или B/M/R у Twice Office), в любом окне, слитно или раздельно */
   const IL_SRC="каталог Ital Lenti «Premium Armonie» (2023), стр. 96–97";
   const IL_TZ={T:"T — Transitions XTRActive",Z:"Z — поляризация"};
-  const ilf=(n,codes,corr,suf)=>{const cs=Object.keys(codes).sort((a,b)=>b.length-a.length),esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const ILR={};
+  const ilf=(n,codes,corr,suf)=>{ILR[n]={corr,suf};const cs=Object.keys(codes).sort((a,b)=>b.length-a.length),esc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
     const cl=Object.keys(corr),sl=Object.keys(suf),re=new RegExp("^("+(cl.length?"["+cl.join("")+"]":"(?!)")+")?("+cs.map(esc).join("|")+")("+(sl.length?"["+sl.join("")+"]":"(?!)")+")?$","i");
-    const glued=GR(re,m=>{const c=cs.find(x=>x.toUpperCase()===m[2].toUpperCase());return [m[1]?"коридор "+corr[m[1].toUpperCase()]+" мм":"",c+" — "+n+", "+codes[c],m[3]?suf[m[3].toUpperCase()]:""].filter(Boolean).join("; ");},/^[A-Za-z]{1,6}$/,{opt:1,l:"Код"});
-    return {n:"Ital Lenti "+n,m:n,f:{nT:[glued,GE(Object.fromEntries(cl.map(k=>[k,"коридор "+corr[k]+" мм"])),{opt:1,l:"Коридор"}),GE(Object.fromEntries(cs.map(k=>[k,k+" — "+n+", "+codes[k]])),{opt:1,l:"Код"}),GE(suf,{opt:1,l:"Суффикс"})]}};};
+    const glued=GR(re,m=>{const c=cs.find(x=>x.toUpperCase()===m[2].toUpperCase()),k=m[1]&&m[1].toUpperCase();return [k?k+" — коридор "+corr[k]+" мм":"",c+" — "+n+", "+codes[c],m[3]?suf[m[3].toUpperCase()]:""].filter(Boolean);},/^[A-Za-z]{1,6}$/,{opt:1});
+    return {n:"Ital Lenti "+n,m:n,f:{nT:[glued,GE(Object.fromEntries(cl.map(k=>[k,k+" — коридор "+corr[k]+" мм"])),{opt:1}),GE(Object.fromEntries(cs.map(k=>[k,k+" — "+n+", "+codes[k]])),{opt:1}),GE(suf,{opt:1})]}};};
   GBR.push({b:"Ital Lenti",c:"itl",any:1,src:IL_SRC,fams:[
     ilf("Twice Armonie",{"AWR": "1,50 Clear/Transitions/XTRActive/Polar", "AWH": "1,60 Clear/Transitions/XTRActive/Polar", "AWF": "1,67 Clear/Transitions/XTRActive/Polar", "AWK": "1,74 Clear/Transitions", "AWA": "Trilogy Clear/Transitions/XTRActive", "AWHU": "1,60 Clear UV Tech", "AWFU": "1,67 Clear UV Tech", "AWKU": "1,74 Clear UV Tech"},{"A": "18", "B": "17", "C": "16", "D": "15", "E": "14", "F": "13", "G": "12"},{"T": "T — Transitions XTRActive", "Z": "Z — поляризация"}),
     ilf("Twice",{"WR": "1,50 Clear/Transitions/XTRActive/Polar", "WH": "1,60 Clear/Transitions/XTRActive/Polar", "WF": "1,67 Clear/Transitions/XTRActive/Polar", "WK": "1,74 Clear/Transitions", "WA": "Trilogy Clear/Transitions/XTRActive"},{"A": "18", "B": "17", "C": "16", "D": "15", "E": "14", "F": "13", "G": "12"},{"T": "T — Transitions XTRActive", "Z": "Z — поляризация"}),
@@ -1447,7 +1456,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if(!go(0))return null;
     const r={};for(const k of K)r[k]={ok:1,full:1,lines:[]};
     as.map(([j,x])=>({R:rules[j],x})).sort((a,b)=>K.indexOf(a.R.k)-K.indexOf(b.R.k)||a.R.i-b.R.i)
-      .forEach(({R,x})=>{const o=r[R.k];o.full=o.full&&x.full;if(x.line)o.lines.push((R.rule.l?R.rule.l+": ":"")+x.line);});
+      .forEach(({R,x})=>{const o=r[R.k];o.full=o.full&&x.full;if(Array.isArray(x.line))o.lines.push(...x.line);else if(x.line)o.lines.push((R.rule.l?R.rule.l+": ":"")+x.line);});
     return r;}
   function gMatch(F,center){const res=[];
     for(const B of GBR){if(center&&center!==B.c)continue;
@@ -1531,14 +1540,15 @@ function lookup(codes){const seen=new Set(),res=[];
     if(lsBF&&!brands.includes(lsBF)&&!(lsBF==="HOYA"&&hoyaChip))lsBF="";
     const M=lsBF==="HOYA"?[]:gFams(G);
     const pl=(n,a,b,d)=>{const x=n%10,y=n%100;return x===1&&y!==11?a:x>=2&&x<=4&&(y<12||y>14)?b:d;};
+    const R=s=>{const m=String(s).match(/^([^\s—:]{1,8}) — (.+)$/);return m?'<div class="ls-rule"><code>'+esc(m[1])+'</code><span>'+esc(m[2])+'</span></div>':L(s);};
     const full=M.length===1&&M[0].full;const out=[];
-    out.push("<div><b>"+esc(lsBF==="HOYA"?"HOYA: "+hoyaN+" "+pl(hoyaN,"линейка","линейки","линеек"):full?"Полное совпадение":"Частичное совпадение: "+M.length+" "+pl(M.length,"линейка","линейки","линеек")+(lsBF?"":" ("+(hoyaChip?["HOYA",...brands]:brands).join(", ")+")"))+"</b></div>");
+    out.push("<div><b>"+esc(lsBF==="HOYA"?"HOYA: "+hoyaN+" "+pl(hoyaN,"линейка","линейки","линеек"):full?"Полное совпадение: "+M[0].fam.n:M.length===1?"Совпадение: "+M[0].fam.n:"Частичное совпадение: "+M.length+" "+pl(M.length,"линейка","линейки","линеек")+(lsBF?"":" ("+(hoyaChip?["HOYA",...brands]:brands).join(", ")+")"))+"</b></div>");
     if(brands.length>1||hoyaChip){const cnt=b=>G.M.filter(r=>r.B.b===b).length;
       out.push('<div class="ls-chips" role="group" aria-label="Производитель">'+[["","Все",G.M.length+(hoyaChip?hoyaN:0)],...(hoyaChip?[["HOYA","HOYA",hoyaN]]:[]),...brands.map(b=>[b,b,cnt(b)])].map(([v,t,n])=>
         '<button type="button" class="ls-chip" data-bf="'+esc(v)+'" aria-pressed="'+(lsBF===v)+'">'+esc(t)+' <span>'+n+'</span></button>').join("")+"</div>");}
     if(lsBF==="HOYA"){out.push(L("Впишите код под кругом со стороны носа (например MY43, LS65U, Ni7), чтобы разобрать линейку, коридор и материал"));return out.join("");}
-    if(M.length===1){const r=M[0];out.push(L("Линейка: "+r.fam.n+" ("+r.B.src+(r.fam.p&&!/стр\./.test(r.B.src)?", стр. "+r.fam.p:"")+")"));
-      for(const k of ["nT","nB","tT","tB"])r.r[k].lines.forEach(s=>out.push(L(s)));}
+    if(M.length===1){const r=M[0];
+      for(const k of ["nT","nB","tT","tB"])r.r[k].lines.forEach(s=>out.push(R(s)));}
     else{const common=[];for(const k of ["nT","nB","tT","tB"]){const ls=M.map(r=>r.r[k].lines.join("; "));if(ls[0]&&ls.every(x=>x===ls[0]))common.push(ls[0]);}
       if(common.length)out.push('<div class="ls-known"><div class="ls-known-h">Найдено по окнам</div>'+common.map(L).join("")+"</div>");
       out.push('<div style="margin-top:6px">Подходят:</div>');
@@ -1693,7 +1703,8 @@ function lookup(codes){const seen=new Set(),res=[];
       <div class="card eg-card"><div class="eg-row"><div class="eg-main">
         <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span>${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
         ${r.crop ? '' : `<div class="eg-meta">${esc(r.mark_visual)}</div>`}
-        <div class="eg-meta">${esc(r.where)}</div>
+        ${egRules(r)}
+        ${egAlt(r)}
         <div class="eg-src">${egLinks(r)}</div>
       </div>${r.crop ? `<img class="eg-crop" src="${esc('engravings/' + r.crop)}"${/@2x\./.test(r.crop) ? ` data-max="${r.crop_max || 40}" onload="this.style.width=(this.naturalWidth/2)*Math.min(1,this.dataset.max/(this.naturalHeight/2))+'px'"` : ''} alt="Гравировка: ${esc(r.model)}" loading="lazy">` : ''}</div>
       </div>`; }).join('') + (res.length > 60 ? '<div class="eg-count">Показаны первые 60, уточните запрос.</div>' : '');
@@ -1706,7 +1717,32 @@ function lookup(codes){const seen=new Set(),res=[];
       .concat(card.map(([p, img], i) => lk(p, img, card.length > 1 ? 'разметочная карта ' + (i + 1) : 'разметочная карта')));
     const own = prod.concat(card).some(([p]) => p === r.page);
     if (r.image && !own) out.push(lk(r.page, r.image, out.length ? 'таблица гравировок' : 'страница каталога'));
-    return `<span>${esc(src)}</span>` + out.join('');
+    return `<div class="eg-src-h">${esc(src)}</div><div class="eg-src-l">${out.join('')}</div>`;
+  }
+  /* наша альтернатива: категория линзы → наша линза этой категории (engravings/alternatives.js) */
+  function egAlt(r) {
+    const O = window.ALT_OURS, RS = window.ALT_RULES;
+    if (!O || !RS || !/дизайн|метка|гравировка|прогрессивная/.test(r.kind) || /правил|функцион/.test(r.kind)) return '';
+    let c = null;
+    for (const x of RS) {
+      if (!(Array.isArray(x.b) ? x.b.includes(r.brand) : x.b === r.brand)) continue;
+      if (x.no && x.no.test(r.model)) return '';
+      if (x.re && x.re.test(r.model)) { c = x.c; break; }
+    }
+    const o = c && O[c]; if (!o) return '';
+    const own = r.model.toLowerCase().includes(o.name.replace(/^(Hoyalux iD |Hoyalux )/, '').toLowerCase());
+    return `<div class="eg-alt"><div class="eg-rules-h">${own ? 'Это наш вариант' : 'Наша альтернатива'} · ${esc(o.cat)}</div><img src="${esc('engravings/' + o.logo)}" alt="${esc(o.name)}" height="52"></div>`;
+  }
+  /* правила шифра для карточки (сейчас Ital Lenti): буква коридора и суффикс, без пересказа каталога */
+  function egRules(r) {
+    if (r.brand !== 'Ital Lenti') return '';
+    const n = Object.keys(ILR).sort((a, b) => b.length - a.length).find(k => r.model.startsWith('Ital Lenti ' + k + ',') || r.model === 'Ital Lenti ' + k);
+    if (!n) return '';
+    const { suf } = ILR[n], row = (c, t) => `<div class="ls-rule"><code>${esc(c)}</code><span>${esc(t)}</span></div>`;
+    const rows = [];
+    if (r.mark_code) rows.push(row(r.mark_code, 'код линзы'));
+    Object.entries(suf).forEach(([k, v]) => rows.push(row(k, 'после кода: ' + String(v).replace(/^\S+ — /, ''))));
+    return `<div class="eg-rules"><div class="eg-rules-h">Правила</div>${rows.join('')}</div>`;
   }
   function init() {
     DATA = window.ENGRAVINGS || [];
@@ -1727,7 +1763,7 @@ function lookup(codes){const seen=new Set(),res=[];
     $('egCount').textContent = 'Загружаю базу…';
     const s = document.createElement('script');
     s.src = 'engravings/data.js';
-    s.onload = init;
+    s.onload = () => { const a = document.createElement('script'); a.src = 'engravings/alternatives.js'; a.onload = a.onerror = init; document.head.appendChild(a); };
     s.onerror = () => { loaded = false; $('egCount').textContent = 'Не удалось загрузить базу гравировок.'; };
     document.head.appendChild(s);
   }
