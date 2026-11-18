@@ -244,6 +244,9 @@
   .eg-side { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
   .eg-side:empty { display: none; }
   .eg-alt { text-align: right; }
+  .ls-more summary { cursor: pointer; color: #185fa5; list-style: none; display: inline-block; margin-top: 2px; }
+  .ls-more summary::-webkit-details-marker { display: none; }
+  .ls-more[open] summary { margin-bottom: 4px; }
   .eg-alt .eg-rules-h { white-space: nowrap; }
   .eg-alt img { display: block; height: 52px; width: auto; margin: 4px 0 0 auto; }
   .ls-rule { display: flex; gap: 8px; align-items: baseline; }
@@ -1554,8 +1557,8 @@ function lookup(codes){const seen=new Set(),res=[];
       for(const k of ["nT","nB","tT","tB"])r.r[k].lines.forEach(s=>out.push(R(s)));}
     else{const common=[];for(const k of ["nT","nB","tT","tB"]){const ls=M.map(r=>r.r[k].lines.join("; "));if(ls[0]&&ls.every(x=>x===ls[0]))common.push(ls[0]);}
       if(common.length)out.push('<div class="ls-known"><div class="ls-known-h">Найдено по окнам</div>'+common.map(L).join("")+"</div>");
-      out.push('<div style="margin-top:6px">Подходят:</div>');
-      out.push(M.slice(0,16).map(r=>L("· "+r.fam.n)).join("")+(M.length>16?L("и ещё "+(M.length-16)):""));}
+      const nm=r=>{const n=String(r.fam.n),b=r.B.b;return n.toLowerCase().startsWith(b.toLowerCase()+" ")?n.slice(b.length+1):n;};
+      out.push('<details class="ls-more"><summary>смотреть</summary>'+M.map(r=>L((brands.length>1?r.B.b+" · ":"")+nm(r))).join("")+"</details>");}
     return out.join("");}
   function lsDecode(){const el=document.getElementById("lsDec");
     const mirNote=LS.mirror?'<div class="ls-note" style="margin:0 0 6px">Назальная сторона справа, окна прочитаны зеркально: так бывает на второй линзе пары или если смотреть на линзу с другой стороны</div>':"";
@@ -1704,7 +1707,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if (!res.length) { out.innerHTML = '<div class="eg-empty">Не найдено в каталогах. Проверьте написание кода или опишите знак другими словами.</div>'; return; }
     out.innerHTML = res.slice(0, 60).map(({ x }) => { const r = x.r; return `
       <div class="card eg-card"><div class="eg-row"><div class="eg-main">
-        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(r.model)}</span>${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
+        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(egModel(r))}</span>${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
         ${r.crop ? '' : `<div class="eg-meta">${esc(r.mark_visual)}</div>`}
         ${egRules(r)}
         <div class="eg-src">${egLinks(r)}</div>
@@ -1720,6 +1723,12 @@ function lookup(codes){const seen=new Set(),res=[];
     const own = prod.concat(card).some(([p]) => p === r.page);
     if (r.image && !own) out.push(lk(r.page, r.image, out.length ? 'таблица гравировок' : 'страница каталога'));
     return `<div class="eg-src-h">${esc(src)}</div><div class="eg-src-l">${out.join('')}</div>`;
+  }
+  /* название модели без повторения бренда: «Ital Lenti · Ital Lenti Twice…» → «Ital Lenti · Twice…» */
+  function egModel(r) {
+    const m = String(r.model || ''), pre = [r.brand, ...({ 'Rupp+Hubrach': ['r+h'] }[r.brand] || [])];
+    for (const p of pre) if (m.length > p.length + 1 && m.toLowerCase().startsWith(p.toLowerCase() + ' ')) return m.slice(p.length + 1);
+    return m;
   }
   /* наша альтернатива: категория линзы → наша линза этой категории (engravings/alternatives.js) */
   function egAlt(r) {
