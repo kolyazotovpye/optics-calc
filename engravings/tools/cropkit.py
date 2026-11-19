@@ -29,7 +29,7 @@ def save(D):
         PRE + json.dumps(D, ensure_ascii=False, separators=(",", ":")) + ";")
 
 def slug(s):
-    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:40]
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:80]  # было 40: длинные имена совпадали и вырезки перезаписывали друг друга (Nikon 2018)
 
 # ---------- текст страницы ----------
 def lines(pdf, page):
