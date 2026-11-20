@@ -850,10 +850,12 @@ document.querySelectorAll('input, select').forEach(el => el.addEventListener('in
   let loaded = false, DATA = [], idx = [], brand = '';
   const $ = id => document.getElementById(id);
   const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е');
-  /* страна бренда (головная компания); фактический завод у линзы бывает другим. Lencor: страна в каталоге не указана */
+  /* file у правил: один каталог или список каталогов, к карточкам которых правила относятся */
+  const egFileOk = (B, r, f) => { const fl = (f && f.file) || B.file; return !fl || (Array.isArray(fl) ? fl.includes(r.source) : fl === r.source); };
+  /* страна бренда (головная компания); фактический завод у линзы бывает другим. Lencor — Китай (со слов Коли, в каталоге не указано) */
   const EG_COUNTRY = { HOYA: 'Япония', Seiko: 'Япония', Nikon: 'Япония', Maxxee: 'Япония', ZEISS: 'Германия', Rodenstock: 'Германия', 'Rodenstock White Label': 'Германия', 'Rupp+Hubrach': 'Германия',
-    Essilor: 'Франция', BBGR: 'Франция', Kodak: 'США', 'Signet Armolite': 'США', Shamir: 'Израиль', 'Ital Lenti': 'Италия', ODV: 'Россия' };
-  const EG_COUNTRY_EN = { 'Япония': 'japan', 'Германия': 'germany', 'Франция': 'france', 'США': 'usa', 'Израиль': 'israel', 'Италия': 'italy', 'Россия': 'russia' };
+    Essilor: 'Франция', BBGR: 'Франция', Kodak: 'США', 'Signet Armolite': 'США', Shamir: 'Израиль', 'Ital Lenti': 'Италия', ODV: 'Россия', Lencor: 'Китай' };
+  const EG_COUNTRY_EN = { 'Япония': 'japan', 'Германия': 'germany', 'Франция': 'france', 'США': 'usa', 'Израиль': 'israel', 'Италия': 'italy', 'Россия': 'russia', 'Китай': 'china' };
   const egNameToks = () => norm(($('egName') || {}).value).split(/[\s,;]+/).filter(Boolean);
   /* совпадение с начала слова (italy не ловит digital); у русских слов допускаем другое окончание: Японии → Япония */
   const egNameOk = (x, q) => { const w = x.words || (x.words = x.hay.split(/[\s,;:()\/«»"+&]+/).filter(Boolean));
@@ -1300,7 +1302,10 @@ function lookup(codes){const seen=new Set(),res=[];
     shf("Shamir Genesis Free Form","GNF"),shf("Shamir Attitude III SV","AT3",{sv:1}),shf("Shamir Autograph Attitude","FFA"),
     shf("Shamir Smart Attitude","SA"),shf("Shamir SV III / SV III AsWorn","III",{sv:1}),shf("Shamir Smart SV / Smart SV AsWorn","SV",{sv:1}),
     shf("Shamir Relax","RLX"),shf("Shamir Millennium","MI"),shf("Shamir Computer","FFC"),shf("Shamir WorkSpace","FFW"),
-    shf("Shamir Smart Office","FFO"),shf("Shamir Bifocal","034")]});
+    shf("Shamir Smart Office","FFO"),shf("Shamir Bifocal","034"),
+    /* пиктограммы вместо букв (стр. 53): в окно вписывается слово, удобнее выбрать из списка */
+    shf("Shamir Attitude III Sport","кубок"),shf("Shamir Attitude III Fashion","вешалка"),shf("Shamir Duo","ноты"),
+    shf("Shamir Autograph II / Autograph FreeFrame","очки")]});
   /* ---- бренды с кругом в центре ---- */
   const Q4={"0":"00","2":"25","5":"50","7":"75"};
   const ADD2=GR(/^(\d)(\d)$/,m=>m[1]+","+(Q4[m[2]]||m[2]+"0")+" дптр",/^\d$/,{l:"Аддидация",add:1,ex:"22"});
@@ -1378,19 +1383,29 @@ function lookup(codes){const seen=new Set(),res=[];
     nk24("Presio Power FP","PP","N","234","5431"),
     nk24("Presio Drive","PD","N","024","431"),
     nk24("Presio Advance FP","FP","П","234","5431",{"ПР0":"индекс 1.59, коридор 10 мм","ПР2":"индекс 1.59, коридор 12 мм","ПР4":"индекс 1.59, коридор 14 мм","ПP0":"индекс 1.59, коридор 10 мм","ПP2":"индекс 1.59, коридор 12 мм","ПP4":"индекс 1.59, коридор 14 мм"}),
-    nk24("DigiLife FP","FP","∩","024","5431"),
+    Object.assign(nk24("DigiLife FP","FP","∩","024","5431"),{file:["Nikon 24.pdf","Nikon 18.pdf"]}), /* карточки DigiLife только из каталога 2018, коды те же */
     nk24("Presio First","PF","П","234","431"),
     nk24("Presio Entry","PE","П","234","431")]});
   GBR.push({b:"Nikon",c:"○",src:"каталог Nikon 2018",file:"Nikon 18.pdf",fams:[
     nk("SeeMax Master / DigiLife FP",118,nkc(["","∩"],["0","2","4"])),
-    nk("Presio Power FP",118,nkc("N",["2","4"])),
-    nk("Presio Advance FP",118,nkc("П",["0","2","4"],"",{p159:1})),
-    nk("Presio i Digital",119,nkc("N",["2","4"],"",{no74:1})),
+    /* Presio Power FP и Advance FP (кроме 1.59) убраны: коды коридора расходятся с каталогом 2024, верим новому (Коля, 20.11.2026) */
+    nk("Presio Advance FP",118,Object.assign(GE({"ПР0":"индекс 1.59, коридор 10 мм","ПР2":"индекс 1.59, коридор 12 мм","ПР4":"индекс 1.59, коридор 14 мм","ПP0":"индекс 1.59, коридор 10 мм","ПP2":"индекс 1.59, коридор 12 мм","ПP4":"индекс 1.59, коридор 14 мм"},{l:"Код продукта"}),{join:1})),
+    /* Presio i Digital убран: его коды N4 2, N3 4… в каталоге 2024 означают SeeMax Ultimate / Presio Power / Presio Drive (Коля, 20.11.2026: верим новому) */
     nk("Presio i",119,GE({NC:"индекс 1.67",C:"индекс 1.60 / 1.50 (с аркой)",ПC:"индекс 1.60 / 1.50"},{l:"Код продукта"})),
-    nk("Relaxsee Neo / Soltes Wide Neo / Lite AS",119,nkc("N",[""])),
-    nk("Home&Office Neo",119,nkc("N",[""],"M")),
-    nk("SeeMax Infinite",119,nkc(["∩","П"],[""]),1),
-    nk("Lite SP Viewfit / Lite SP",120,nkc("n",[""]),1)]});
+    ]});
+  /* Nikon 2024, однофокальные и специальные (стр. 128–129): у носа код, буква — линия продукта, цифра — индекс.
+     Коды совпадают с каталогом 2018, поэтому правила общие для карточек обоих каталогов. Исключения: Ɔn (Lite AS 1.50), NK (Lite SP 1.50 со склада) */
+  const nkx=(e,o)=>Object.assign(GE(e,{l:"Код продукта"}),{join:1},o||{});
+  const nkI=(pre,idx,suf)=>{const e={};for(const i of idx)e[pre+i+(suf||"")]="индекс "+NK_I[i];return e;};
+  GBR.push({b:"Nikon",c:"○",src:"каталог Nikon 2024 (07/24), стр. 128–129",file:["Nikon 24.pdf","Nikon 18.pdf"],fams:[
+    nk("Relaxsee Neo",128,nkx(nkI("N","5431"))),
+    nk("Soltes Wide Neo",128,nkx(nkI("N","5431"))),
+    nk("Home&Office Neo",128,nkx(nkI("N","5431","M"))),
+    nk("SeeMax Infinite",128,nkx(Object.assign(nkI("П","5431"),nkI("∩","5431"))),1),
+    nk("Myopsee",129,nkx(nkI("П","543")),1),
+    nk("Lite AS",129,nkx(Object.assign(nkI("N","543"),{"Ɔn":"индекс 1.50 (знак Ɔn: перевёрнутая C и n)","ɔn":"индекс 1.50 (знак Ɔn)","Cn":"индекс 1.50 (знак Ɔn)","Эn":"индекс 1.50 (знак Ɔn)","ЭП":"индекс 1.50 (знак Ɔn)"})),1),
+    nk("Lite SP Viewfit",129,nkx(nkI("n","5431")),1),
+    nk("Lite SP (только со склада)",129,nkx({n3:"индекс 1.60",NK:"индекс 1.50 (код NK вместо цифры)"}),1)]});
   /* Essilor / Varilux / Kodak (ELO 2026, Альманах гравировок): у носа знак дизайна (графика) + код материала, у виска аддидация */
   const ES_MAT=GE({"5":"Orma 1.5","P":"Airwear 1.59","6":"Ormix 1.6","π":"Stylis 1.67","п":"Stylis 1.67 (π)","74":"Lineis 1.74","8":"стекло 1.8","✳":"Trivex 1.53 (TREXA)","*":"Trivex 1.53 (TREXA)","✱":"Trivex 1.53 (TREXA)"},{l:"Материал"});
   /* разметочные карты ELO 2026 (стр. 5.18–5.37): у носа знак дизайна + материал (на картах 5 или M), над темпоральным кругом вариант, под ним аддидация */
@@ -1430,8 +1445,10 @@ function lookup(codes){const seen=new Set(),res=[];
   /* Signet Armolite (Альманах гравировок, стр. 34): коды у носа */
   GBR.push({b:"Signet Armolite",c:"○",src:"«Альманах гравировок», стр. 34",fams:[
     {n:"SA Navigator / Navigator Short",m:"Navigator",f:{nB:[GE({o:"Navigator 1.5 CR39","1":"Navigator 1.56",p:"Navigator 1.59","6":"Navigator 1.6",c:"Navigator Short 1.5",sl:"Navigator Short 1.56"},{l:"Код"})],tB:[ADD2]}},
-    {n:"SA Signia / Signia Plus / Signia Premium / Xcel",m:"SA ",f:{nB:[GE({CCCO:"SA Xcel 1.5",SAP:"Signia Premium 1.5",SAP3:"Signia Premium 1.53",SAP6:"Signia Premium 1.59 / 1.6",SAP7:"Signia Premium 1.67",SAP4:"Signia Premium 1.74",
-      "SA+":"Signia Plus 1.5","SA+6":"Signia Plus 1.6","SA+7":"Signia Plus 1.67",SA:"Signia 1.5",SA6:"Signia 1.6",SA7:"Signia 1.67"},{l:"Код"})],tB:[ADD2]}}]});
+    {n:"SA Signia / Signia Plus / Signia Premium / Xcel",m:"SA Signia / SA Xcel",f:{nB:[GE({CCCO:"SA Xcel 1.5",SAP:"Signia Premium 1.5",SAP3:"Signia Premium 1.53",SAP6:"Signia Premium 1.59 / 1.6",SAP7:"Signia Premium 1.67",SAP4:"Signia Premium 1.74",
+      "SA+":"Signia Plus 1.5","SA+6":"Signia Plus 1.6","SA+7":"Signia Plus 1.67",SA:"Signia 1.5",SA6:"Signia 1.6",SA7:"Signia 1.67"},{l:"Код"})],tB:[ADD2]}},
+    /* старые Kodak у Signet Armolite: те же коды дизайна, что у Kodak */
+    {n:"Kodak (Signet Armolite)",m:"Kodak",f:{nT:[GE({L:"L — левая линза",R:"R — правая линза"},{opt:1})],nB:[GE({R:"R — правая линза"},{opt:1}),KD,Object.assign({},ES_MAT,{opt:1})],tB:[ADD2]}}]});
   /* Rupp+Hubrach (каталог стр. 14): знак дизайна + метка материала */
   const RH_MAT=GE({"6":"1.6","67":"1.67","74":"1.74",P:"Airium"},{l:"Материал",opt:1});
   const RH_DES=GE({"Σ":"SELECTAL TOP / SPORTS SELECTAL TOP","сигма":"SELECTAL TOP (Σ)","Ψ":"SENTORIS mini","пси":"SENTORIS mini (Ψ)","Φ":"SPORTS.free","фи":"SPORTS.free (Φ)","ʃ":"SENTORIS","f":"xfree","fΣ":"SELECTAL TOP xfree",
@@ -1505,10 +1522,17 @@ function lookup(codes){const seen=new Set(),res=[];
     {n:"Rodenstock Nexyma 80 (2009)",m:"Nexyma 80",f:{nT:[rfc({N8:"N8 — Nexyma 80"}),rfc({A:"A — дегрессия 0,80",B:"B — дегрессия 1,50"},{opt:1})],nB:[RF_NUM,Object.assign({},RF_NUM)]}}]});
   /* Rodenstock B.I.G. NORM (каталог Rodenstock, июль 2026, стр. 12): постоянные «косточки» на горизонтальной линии по бокам креста;
      под левой код линзы и аддидация, ниже R (марка Rodenstock); у Impression, Multigressiv и Progressiv схема одна */
-  GBR.push({b:"Rodenstock",c:"ves",any:1,file:"Каталог Rodenstock.pdf",src:"каталог Rodenstock (июль 2026), стр. 12, 16, 23, 31, 46",fams:[
-    {n:"Rodenstock B.I.G. NORM (Impression / Multigressiv / Progressiv)",m:"B.I.G. NORM",f:{nT:[GE({R:"R — марка Rodenstock"},{opt:1})],nB:[Object.assign({},RF_NUM),Object.assign({},RF_NUM)],tB:[RD_ADD]}},
-    /* у Progressiv Life (STANDARD, стр. 16) те же «косточки» на линии */
-    {n:"Rodenstock Progressiv Life (STANDARD)",m:"Progressiv Life",f:{nT:[GE({R:"R — марка Rodenstock"},{opt:1})],nB:[Object.assign({},RF_NUM),Object.assign({},RF_NUM)],tB:[RD_ADD]}}]});
+  /* «косточки» Rodenstock 2026. Каталог, стр. 12 (пример для правой линзы): у виска под линией код линзы (I5F) и аддидация (20), ниже марка R;
+     у носа под линией база и индекс (65 50). Как читать цифры — Functional Engravings 2009: база двумя цифрами (55 = 5,5 дптр), индекс по показателю (50 = 1.50) */
+  const RV_CODE=GR(/^(?=.*[A-Za-z])[A-Za-z0-9]{2,5}$/,m=>m[0]+" — код линзы",/^[A-Za-z0-9]{1,4}$/,{opt:1});
+  const RV_ADD=GR(/^([0-3])([0-9])$/,m=>{const v=ADD2.d(m);return v?m[0]+" — аддидация "+v:null;},/^[0-3]$/,{opt:1,add:1,ex:"20"});
+  const RV_R=GE({R:"R — марка Rodenstock"},{opt:1});
+  const RV_BASE=GR(/^([1-9])([0-9])$/,m=>m[0]+" — база "+m[1]+","+m[2]+" дптр",/^[1-9]$/,{opt:1});
+  const RV_IDX=GE({"50":"50 — индекс 1.50","53":"53 — индекс 1.53","54":"54 — индекс 1.54","55":"55 — индекс 1.55","59":"59 — индекс 1.59","60":"60 — индекс 1.60","67":"67 — индекс 1.67","74":"74 — индекс 1.74","76":"76 — индекс 1.76"},{opt:1});
+  const RV_F={nT:[RV_R],tB:[RV_ADD,RV_CODE,RV_ADD,RV_R],nB:[RV_BASE,RV_IDX]};
+  GBR.push({b:"Rodenstock",c:"ves",file:"Каталог Rodenstock.pdf",src:"каталог Rodenstock (июль 2026), стр. 12, 16, 23, 31, 46",fams:[
+    /* у Progressiv Life (STANDARD, стр. 16) те же «косточки» и та же раскладка цифр: по ним линейки не различить, только по надписи над центром */
+    {n:"Rodenstock B.I.G. NORM / Progressiv Life",m:"B.I.G. NORM / Progressiv Life",f:RV_F}]});
   GBR.push({b:"Rodenstock",c:"▭",file:"Альманах гравировок.pdf",src:"«Альманах гравировок», стр. 22",fams:[
     rd("▭","Nexyma",{N4:"Nexyma 40, дегрессия 1,0",N8A:"Nexyma 80 A, дегрессия 0,8",N8B:"Nexyma 80 B, дегрессия 1,5"})]});
   const G_FIELD={nT:"над назальным знаком",nB:"под назальным знаком",tT:"над темпоральным знаком",tB:"под темпоральным знаком"};
@@ -1557,7 +1581,7 @@ function lookup(codes){const seen=new Set(),res=[];
   const gFams=G=>lsBF&&G.M.some(r=>r.B.b===lsBF)?G.M.filter(r=>r.B.b===lsBF):G.M;
   /* Таблицы описывают семейства, а карточки могут относиться к разным дизайнам. */
   function gRow(x,r,F){
-    if(r.B.file&&x.r.source!==r.B.file)return false; /* правила одного каталога не ловят карточки другого (∞ 2009 и «косточки» 2026) */
+    if(!egFileOk(r.B,x.r,r.fam))return false; /* правила одного каталога не ловят карточки другого (∞ 2009 и «косточки» 2026) */
     const mn=norm(x.r.model),compact=v=>norm(v).replace(/\s+/g,"");
     if(r.B.b==="Rupp+Hubrach"){
       const token=String(F.nB||"").trim().split(/[\s,;]+/)[0],rule=r.fam.f.nB[0];
@@ -1579,6 +1603,12 @@ function lookup(codes){const seen=new Set(),res=[];
       const code=ts.find(t=>codes.some(k=>gUp(k)===gUp(t)));
       return code?compact(x.r.mark_code)===compact(code):mn.includes("kodak");
     }
+    if(r.B.b==="Signet Armolite"){
+      /* код из окна совпал с кодом правила: показываем только эту линзу */
+      const rule=(r.fam.f.nB||[]).find(x=>x&&x.e&&!x.opt);const ts=["nT","nB","tT","tB"].flatMap(k=>String(F[k]||"").trim().split(/[\s,;]+/)).filter(Boolean);
+      const code=rule&&ts.find(t=>Object.keys(rule.e).some(k=>gUp(k)===gUp(t)));
+      if(code)return compact(x.r.mark_code)===compact(code);
+    }
     if(r.B.b==="ODV"){
       const t=String(F.tB||"").trim().toUpperCase(),prefix=t.match(/^[CPLS][SWPFMJUDRCGAB]/);
       if(prefix)return x.r.kind==="дизайн"&&gUp(x.r.mark_code).startsWith(prefix[0]);
@@ -1588,7 +1618,8 @@ function lookup(codes){const seen=new Set(),res=[];
     if(r.B.b==="Essilor"&&/ELO/.test(x.r.source)&&r.fam.p){const fn=norm(r.fam.n);
       return norm(x.r.model)===fn||(/\(f-360 \/ regular \/ short\)/.test(fn)&&mn.startsWith("varilux physio extensee"));}
     const names=String(r.fam.m).replace(/ \(.*$/, "").split(" / ").map(norm);
-    if(!names.some(n=>mn.includes(n)))return false;
+    /* целое название: «Autograph II» не ловит «Autograph III» */
+    if(!names.some(n=>{let i=mn.indexOf(n);while(i>=0){if(!/[a-z0-9а-яё]/i.test(mn[i+n.length]||""))return true;i=mn.indexOf(n,i+1);}return false;}))return false;
     if(r.B.b==="Maxxee"&&F.nB)return compact(x.r.mark_code)===compact(F.nB);
     if(r.B.b==="Nikon"&&F.nB){
       const q=compact(F.nB),code=compact(x.r.mark_code);
@@ -1612,7 +1643,7 @@ function lookup(codes){const seen=new Set(),res=[];
   }
   /* тип линзы по названию линейки: монофокал, прогрессив, офисная, поддержка аккомодации, бифокал; плюс вождение / спорт */
   /* название без пометки типа в скобках: тип и так подписан рядом («· монофокал») */
-  const lsNT=n=>String(n||"").replace(/\s*\((?:моно|одно)фокальн(?:ая|ые|ый)\)|\s*\(прогрессивн(?:ые|ая|ый)\)/gi,"");
+  const lsNT=n=>String(n||"").replace(/\s*\((?:моно|одно)фокальн(?:ая|ые|ый)\)|\s*\(прогрессивн(?:ые|ая|ый)\)/gi,"").replace(/\s+(?:(?:моно|одно)фокальн|прогрессивн)(?:ая|ые|ый)(?=[,\s]|$)/gi,"").replace(/^Бифокал(?:ьная|ьные)?\s+(?=\S)/i,"");
   function lsType(n,kind,brand){n=String(n||"");kind=String(kind||"");const t=[];
     if(/Trifocal|S728/i.test(n))t.push("трифокал");
     else if(/Bifo|Bifocal|\bCT ?2[58]\b|\bS28\b|\bC28\b|R22|Бифокал/i.test(n))t.push("бифокал");
@@ -1640,7 +1671,9 @@ function lookup(codes){const seen=new Set(),res=[];
         '<button type="button" class="ls-chip" data-bf="'+esc(v)+'" aria-pressed="'+(lsBF===v)+'">'+esc(t)+' <span>'+n+'</span></button>').join("")+"</div>");}
     if(lsBF==="HOYA"){out.push(L("Впишите код под кругом со стороны носа (например MY43, LS65U, Ni7), чтобы разобрать линейку, коридор и материал"));return out.join("");}
     if(M.length===1){const r=M[0];
-      for(const k of ["nT","nB","tT","tB"])r.r[k].lines.forEach(s=>out.push(R(s)));}
+      for(const k of ["nT","nB","tT","tB"])r.r[k].lines.forEach(s=>out.push(R(s)));
+      if(r.B.b==="Ital Lenti"){const sf=(ILR[r.fam.m]||{}).suf||{},ls=["nT","nB","tT","tB"].flatMap(k=>r.r[k].lines);
+        if((sf.T||sf.Z)&&!ls.some(l=>/^[TZ] — /.test(l)))out.push(R("Clear — нет T и Z после кода: не фотохром, без поляризации"));}}
     else{const common=[];for(const k of ["nT","nB","tT","tB"]){const ls=M.map(r=>r.r[k].lines.join("; "));if(ls[0]&&ls.every(x=>x===ls[0]))common.push(ls[0]);}
       if(common.length)out.push('<div class="ls-known"><div class="ls-known-h">Найдено по окнам</div>'+common.map(L).join("")+"</div>");
       const nm=r=>{const n=String(r.fam.n),b=r.B.b;return n.toLowerCase().startsWith(b.toLowerCase()+" ")?n.slice(b.length+1):n;};
@@ -1705,6 +1738,8 @@ function lookup(codes){const seen=new Set(),res=[];
     const esMark=["lsL1","lsL2","lsD1","lsD2"].some(id=>/ⓔ|◠○|M↓|≺HF/.test(lsRaw(id)));
     const hoyaLike=["lsL1","lsL2","lsD1","lsD2"].every(id=>/^[\sA-Za-z0-9()+\-–]*$/.test(lsRaw(id)));
     const tryHoya=(fullOnly)=>{if((c&&c!=="○")||esMark||!hoyaLike||(LS.xb&&LS.xb!=="HOYA"))return false;const O=lsOrient();const h=hyParse(O.F.nB),M=h?null:O.M;
+      /* код похож на HOYA, но не проходит проверку (SA6 — это Signet, а не HOYA Sportive): сначала даём шанс другим брендам */
+      if(h&&fullOnly&&!hyValid(h,O.F))return false;
       if(h)return set({F:O.F,mirror:O.mir,hoya:h});
       if(!fullOnly&&M&&M.cands.length)return set({F:O.F,mirror:O.mir,hy:Object.assign(M,{bases:new Set(M.cands.map(x=>x.base))})});return false;};
     let allowConf=false;
@@ -1743,7 +1778,7 @@ function lookup(codes){const seen=new Set(),res=[];
       if(LS_IN.digits.includes(id))el.addEventListener("click",e=>{
         const c=document.getElementById("lsS1").value;
         /* в доп. окне выбран бренд (HOYA, Rodenstock): знаки Essilor не предлагаем, окно для ручного ввода */
-        if(c==="○"){if(lsXBrand())return;if(el.value.trim()&&!/^(\\ⓔ\/|ⓔ|☀ⓔ|\(ⓔ|◠○|M↓|≺HF)/.test(el.value.trim()))return;
+        if(c==="○"){if(lsXBrand())return;if(el.value.trim()&&!/^(\\ⓔ\/|ⓔ|☀ⓔ|\(ⓔ|◠○|M↓|≺HF|Ɔn)/.test(el.value.trim()))return;
           e.stopPropagation();lsPopOpen(el,LS_ESSYMS,v=>{el.value=v?v+" ":"";});return;}
         if(c==="Sh"){const codes=lsShItems().map(i=>i[0]);if(el.value.trim()&&!codes.includes(el.value.trim()))return;
           e.stopPropagation();lsPopOpen(el,lsShItems(),v=>{el.value=v;});return;}
@@ -1755,14 +1790,14 @@ function lookup(codes){const seen=new Set(),res=[];
         const it=lsXItems().find(i=>i[0]===v);x.innerHTML=v.startsWith("sk:")&&it&&it[3]?'<img src="'+it[3]+'" alt="">':v==="R"?LS_RLOGO:esc(v);});});}
     document.addEventListener("click",e=>{if(!e.target.closest("#lsPop"))lsPopClose();});
     document.addEventListener("keydown",e=>{if(e.key==="Escape")lsPopClose();});}
-  const LS_SYMS=[["","нет знака"],["○","HOYA, Essilor, Nikon и др."],["S","Seiko"],["Z","ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","Shamir",'<span class="lslogo shlogo" role="img" aria-label="старый логотип Shamir"></span>'],["Sh","Shamir",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","Rodenstock"],["ves","Rodenstock",'<svg class="lsves" viewBox="0 0 24 12" width="22" height="11" aria-hidden="true"><path d="M2 6Q12-2 22 6Q12 14 2 6Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma, Progressiv PureLife)"],["dia","ромб (Rodenstock Progressiv life 2)","◇"],["rect","прямоугольник (Rodenstock Progressiv life XS)","▬"],["fdia","плоский ромб (Rodenstock Progressiv AT)","◊"],["oval","овал (Rodenstock Nexyma, 2009)","⬭"],["itl","Ital Lenti",'<span class="lslogo itlogo" role="img" aria-label="логотип Ital Lenti"></span>']]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
+  const LS_SYMS=[["","нет знака"],["○","HOYA, Essilor, Nikon и др."],["S","Seiko"],["Z","ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","Shamir",'<span class="lslogo shlogo" role="img" aria-label="старый логотип Shamir"></span>'],["Sh","Shamir",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","Rodenstock",'<svg class="lsves" viewBox="0 0 24 12" width="22" height="11" aria-hidden="true"><path d="M12 6C9 2 3 2 3 6s6 4 9 0s9-4 9 0s-6 4-9 0Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'],["ves","Rodenstock",'<svg class="lsves" viewBox="0 0 24 12" width="22" height="11" aria-hidden="true"><path d="M2 6Q12-2 22 6Q12 14 2 6Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma, Progressiv PureLife)"],["dia","ромб (Rodenstock Progressiv life 2)","◇"],["rect","прямоугольник (Rodenstock Progressiv life XS)","▬"],["fdia","плоский ромб (Rodenstock Progressiv AT)","◊"],["oval","овал (Rodenstock Nexyma, 2009)","⬭"],["itl","Ital Lenti",'<span class="lslogo itlogo" role="img" aria-label="логотип Ital Lenti"></span>']]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
   const LS_ESSYMS=[["","очистить / вписать код вручную"],["\\ⓔ/","Xclusive, X track, X track 3D, X track 2","\\ⓔ/"],["ⓔ","X 4D, X 3D, X 2, X Design","ⓔ"],
     ["☀ⓔ","Physio Extensee","☀ⓔ"],["(ⓔ","Comfort Max","(ⓔ"],["ⓔ⌣","Liberty 3.0","ⓔ⌣"],
-    ["◠○","Eyezen","◠○"],["◠○λ","Eyezen lite","◠○λ"],["M↓+","Myopilux Plus","M↓+"],["≺HF","Essilor f-360°","≺HF"]];
+    ["◠○","Eyezen","◠○"],["◠○λ","Eyezen lite","◠○λ"],["M↓+","Myopilux Plus","M↓+"],["≺HF","Essilor f-360°","≺HF"],["Ɔn","Nikon Lite AS 1.50","Ɔn"]];
   /* Shamir: список дизайнов для окна кода (как знаки Essilor), картинка из таблицы гравировок каталога */
   function lsShItems(){const B=GBR.find(b=>b.b==="Shamir");if(!B)return [];
-    const img=c=>{const r=DATA.find(r=>r.brand==="Shamir"&&r.mark_code===c&&r.crop);return r?"engravings/"+r.crop:"";};
-    return [["","очистить / вписать код вручную"],...B.fams.map(f=>{const c=f.f.nB[0].px;return [c,f.m,"",img(c)];})];}
+    const img=f=>{const c=f.f.nB[0].px,m=norm(f.m.split(" / ")[0]);const r=DATA.find(r=>r.brand==="Shamir"&&r.mark_code===c&&r.crop)||DATA.find(r=>r.brand==="Shamir"&&r.crop&&norm(r.model)===m);return r?"engravings/"+r.crop:"";};
+    return [["","очистить / вписать код вручную"],...B.fams.map(f=>[f.f.nB[0].px,f.m,"",img(f)])];}
   const LS_OTHER=new Set(["◌","▭","dia","rect","fdia","oval"]);
   /* дополнительное окно над левым верхним: редкие знаки, которые не стоят в центре схемы */
   const LS_XSK=[["S и косая 7 с чертой слева","AZ"],["S в круге с завитком (Ⓢ)","AZ"],["S в угловых скобках <S>","AZ"],["S и косая 7 тонкой линией","AS"],
@@ -1801,10 +1836,12 @@ function lookup(codes){const seen=new Set(),res=[];
     for(const [s,t,disp,img] of items){
       if(LS_OTHER.has(s))continue;
       /* несколько вариантов одного знака (старый и новый логотип Shamir): одна строка, выбор значком */
-      const same=items.filter(i=>i[0]===s&&i[1]===t);
-      if(same.length>1){if(done.has(s))continue;done.add(s);
+      const grp=/^lsS[12]$/.test(btn.id);
+      const same=items.filter(i=>(grp||i[0]===s)&&i[1]===t&&!LS_OTHER.has(i[0]));
+      if(same.length>1){if(done.has(t))continue;done.add(t);
         const row=document.createElement("div");row.className="ls-other ls-pick";
-        same.forEach(([,,d],k)=>row.appendChild(mk(s,d,(k?"":"старый логотип ")+(k?"логотип ":"")+t)));
+        const PT={"∞":"Rodenstock: восьмёрка ∞ (старые каталоги)",ves:"Rodenstock: «косточки» (каталог 2026)"};
+        same.forEach(([s2,,d],k)=>row.appendChild(mk(s2,d,s2==="Sh"?(k?"логотип ":"старый логотип ")+t:(PT[s2]||t))));
         const lb=document.createElement("span");lb.className="ls-pick-t";lb.textContent=t;row.appendChild(lb);p.appendChild(row);continue;}
       const o=document.createElement("button");o.type="button";o.setAttribute("role","option");o.dataset.v=s;
       o.setAttribute("aria-selected",String(btn.value===s&&(btn.dataset.disp===undefined||btn.dataset.disp===(disp||""))));
@@ -1874,7 +1911,7 @@ function lookup(codes){const seen=new Set(),res=[];
     out.innerHTML = res.slice(0, 60).map(({ x }) => { const r = x.r; return `
       <div class="card eg-card"><div class="eg-row"><div class="eg-main">
         <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(egModel(r))}${egType(r)}</span>${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
-        ${r.crop || r.brand === 'Essilor' ? '' : `<div class="eg-meta">${esc(r.mark_visual)}</div>`}
+        ${r.crop || r.brand === 'Essilor' ? '' : egMeta(r)}
         ${egRules(r)}
         ${egPlace(r) ? `<button type="button" class="eg-sch-btn" data-i="${DATA.indexOf(r)}" aria-expanded="false">схема на линзе</button><div class="eg-sch-box" hidden></div>` : ''}
         <div class="eg-src">${egLinks(r)}</div>
@@ -1921,8 +1958,8 @@ function lookup(codes){const seen=new Set(),res=[];
   /* знаки линзы на схеме: центральный знак, доп. окно и значения по четырём окнам (аддидацию не ставим, она у каждой линзы своя) */
   function egFamB(r) {
     const mn = norm(r.model); let best = null, len = 0;
-    for (const B of GBR) { if (B.b !== r.brand || (B.file && B.file !== r.source)) continue;
-      for (const f of B.fams) { if (norm(f.m) === mn) return { B, f }; const k = norm(f.m || f.n).replace(/\s*\(.*$/, '').trim(); if (k.length > len && (mn.includes(k + ',') || mn === k || mn.startsWith(k + ' ') || mn.includes(' ' + k + ' ') || mn.endsWith(' ' + k))) { best = { B, f }; len = k.length; } } }
+    for (const B of GBR) { if (B.b !== r.brand) continue;
+      for (const f of B.fams) { if (!egFileOk(B, r, f)) continue; if (norm(f.m) === mn) return { B, f }; for (const k0 of String(f.m || f.n).split(' / ')) { const k = norm(k0).replace(/\s*\(.*$/, '').trim(); if (k && k.length > len && (mn.includes(k + ',') || mn === k || mn.startsWith(k + ' ') || mn.includes(' ' + k + ' ') || mn.endsWith(' ' + k))) { best = { B, f }; len = k.length; } } } }
     return best;
   }
   function egPlace(r) {
@@ -1947,6 +1984,7 @@ function lookup(codes){const seen=new Set(),res=[];
     }
     const fb = egFamB(r); if (!fb) return null;
     c = fb.B.c; const f = fb.f.f;
+    if (!code && f.nB && f.nB[0] && /^[а-яё]+$/i.test(f.nB[0].px || '')) F.nB = f.nB[0].px;
     if (code) {
       let placed = false;
       for (const k of K) { const g = f[k] && gField(f[k], code); if (g && g.full) { F[k] = code; placed = true; break; } }
@@ -1976,25 +2014,75 @@ function lookup(codes){const seen=new Set(),res=[];
   }
   function egFam(r) {
     const mn = norm(r.model); let best = null, len = 0;
-    for (const B of GBR) { if (B.b !== r.brand || (B.file && B.file !== r.source)) continue; /* file: правила своего каталога (Nikon 2018 и 2024) */
-      for (const f of B.fams) { const k = norm(f.m || f.n).replace(/\s*\(.*$/, '').trim(); if (k.length > len && (mn.includes(k + ',') || mn === k || mn.startsWith(k + ' ') || mn.includes(' ' + k + ' ') || mn.endsWith(' ' + k))) { best = f; len = k.length; } } }
+    for (const B of GBR) { if (B.b !== r.brand) continue; /* file: правила своего каталога (Nikon 2018 и 2024), проверка по линейке */
+      for (const f of B.fams) { if (!egFileOk(B, r, f)) continue; for (const k0 of String(f.m || f.n).split(' / ')) { const k = norm(k0).replace(/\s*\(.*$/, '').trim(); if (k && k.length > len && (mn.includes(k + ',') || mn === k || mn.startsWith(k + ' ') || mn.includes(' ' + k + ' ') || mn.endsWith(' ' + k))) { best = f; len = k.length; } } } }
     return best;
   }
+  /* значения, вписанные в окна поиска (для правил карточки: вписанная аддидация, буква после кода) */
+  const egToks = () => lsAnyFilled() ? ['lsL1', 'lsL2', 'lsD1', 'lsD2'].flatMap(id => String(document.getElementById(id).value || '').trim().split(/[\s,;]+/)).filter(Boolean) : [];
+  /* расшифровка вписанного (из блока под схемой) — в карточку, только при полном совпадении */
+  function egDecRows() {
+    const out = document.querySelector('#lsDec .ls-out'); if (!out) return null;
+    const b = out.querySelector('b'); if (!b || !/^Полное совпадение/.test(b.textContent)) return null;
+    const row = (c, t) => `<div class="ls-rule"><code>${esc(c)}</code><span>${esc(t)}</span></div>`, rows = [];
+    for (const d of out.children) {
+      if (d.querySelector('b') || d.classList.contains('ls-note') || d.tagName === 'DETAILS') continue;
+      if (d.classList.contains('ls-rule')) { rows.push(d.outerHTML); continue; }
+      const t = d.textContent.trim();
+      if (!t || /^(Линейка|После кода|Проверьте|Подходят|Индекс:)/.test(t)) continue;
+      /* HOYA: «Коридор 3 = 13 мм»; общий разбор: «Обозначение: PP — Presio Power FP» */
+      const m = t.match(/^(Коридор|Материал|Буква|Аддидация|Дегрессия|Вариант) (\S{1,6}) = (.+)$/), g = t.match(/^([^:]{2,30}): (\S{1,8}) — (.+)$/);
+      rows.push(m ? row(m[2], m[1].toLowerCase() + ': ' + m[3]) : g ? row(g[2], g[1].toLowerCase() + ': ' + g[3]) : `<div class="ls-rule"><span>${esc(t)}</span></div>`);
+    }
+    return rows.length ? rows : null;
+  }
+  /* строка описания под заголовком: без повтора кода (он уже в плашке), только то, что добавляет смысл */
+  function egMeta(r) {
+    let t = String(r.mark_visual || '').trim(); const c = String(r.mark_code || '').trim();
+    if (c && !/^\(/.test(c)) { const e = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); t = t.replace(new RegExp('(^|\\s)' + e + '(?=\\s|$|[;,()])'), '$1'); }
+    t = t.replace(/\s{2,}/g, ' ').replace(/^(гравировка|код)\s*(?=\(|$|на |;|,)/i, '').trim().replace(/^[;:,]\s*/, '').replace(/\s*[;:,]$/, '');
+    if (/^\(.*\)$/.test(t)) t = t.slice(1, -1).trim();
+    return (t.match(/[a-zа-яё]/gi) || []).length < 3 ? '' : `<div class="eg-meta">${esc(t)}</div>`;
+  }
   function egRules(r) {
+    const dec = egDecRows();
+    if (dec) return `<div class="eg-rules"><div class="eg-rules-h">Расшифровка</div>${dec.join('')}</div>`;
     if (/материал|схема|правил|расшифр|функцион/.test(r.kind) && !/дизайн/.test(r.kind)) return '';
     const prog = /прогрессив/.test(lsType(r.model, r.kind, r.brand));
     const row = (c, t) => `<div class="ls-rule"><code>${esc(c)}</code><span>${esc(t)}</span></div>`;
     const code = r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? r.mark_code : '';
-    const add = [], codeRow = code ? [row(code, 'код линзы')] : [], rest = [], seen = new Set([gUp(code)]);
+    const add = [], rest = [], seen = new Set([gUp(code)]);
+    /* смысл самого кода из правил разбора (Nikon n3 → индекс 1.60); иначе просто «код линзы» */
+    let codeTxt = 'код линзы';
+    if (code) { const fc = egFam(r), cc = gUp(code).replace(/\s+/g, '');
+      for (const rule of Object.values((fc && fc.f) || {}).flat()) if (rule && rule.e && !rule.add) {
+        const k = Object.keys(rule.e).find(k => gUp(k).replace(/\s+/g, '') === cc); if (k) { codeTxt = String(rule.e[k]).replace(/^\S+ — /, ''); break; } } }
+    const codeRow = code ? [row(code, codeTxt)] : [];
     if (r.brand === 'HOYA' || r.brand === 'Seiko') {
-      if (prog) add.push(row('22', 'ADD = 2.25'));
+      if (prog) { const t = egToks().find(t => /^\d{2}$/.test(t) && +t[0] >= 0 && +t[0] <= 4 && /[0257]/.test(t[1])); const m = t && ADD2.re.exec(t), v = m && ADD2.d(m);
+        add.push(v ? row(t, egAddTxt(v)) : row('22', 'ADD = 2.25')); }
     } else {
       const f = egFam(r); if (!f) return '';
       for (const rule of Object.values(f.f || {}).flat()) {
         if (!rule) continue;
-        if (rule.add) { if (prog && !add.length && rule.re) { const m = rule.ex.match(rule.re), t = m && rule.d(m); if (t) add.push(row(rule.ex, egAddTxt(t))); } continue; }
+        if (rule.add) { if (prog && !add.length && rule.re) {
+            /* вписанная аддидация, если окна заполнены; иначе пример из каталога */
+            const own = egToks().map(t => [t, t.match(rule.re)]).find(([, m]) => m && rule.d(m));
+            const ex = own ? own[0] : rule.ex, m = own ? own[1] : rule.ex.match(rule.re), t = m && rule.d(m); if (t) add.push(row(ex, egAddTxt(t))); } continue; }
+        /* Ital Lenti: буква после кода. Нет T или Z — линза Clear, не фотохром и без поляризации */
+        if (r.brand === 'Ital Lenti' && rule.e && (rule.e.T || rule.e.Z) && f.f.nT && rule === f.f.nT[3]) {
+          const toks = egToks(); let ent = toks.length ? '' : null;
+          for (const t of toks) { if (/^[TZ]$/i.test(t)) ent = t.toUpperCase(); else { const m = t.match(f.f.nT[0].re); if (m && m[3]) ent = m[3].toUpperCase(); } }
+          const clear = row('Clear', 'нет T и Z после кода: не фотохром, без поляризации');
+          if (ent === null) { for (const k of Object.keys(rule.e)) rest.push(row(k, String(rule.e[k]).replace(/^\S+ — /, ''))); rest.push(clear); }
+          else if (ent && rule.e[ent]) rest.push(row(ent, String(rule.e[ent]).replace(/^\S+ — /, '')));
+          else rest.push(clear);
+          continue; }
         if (/коридор/i.test(rule.l || '')) continue;
-        if (rule.e) { const ks = Object.keys(rule.e), vs = ks.map(k => String(rule.e[k]));
+        if (rule.e) { let ks = Object.keys(rule.e);
+          /* окна заполнены: из необязательных вариантов (T, Z, материал…) показываем только вписанные */
+          { const tk = egToks().map(gUp); if (rule.opt && tk.length) { ks = ks.filter(k => tk.some(t => t === gUp(k) || t.endsWith(gUp(k)) && t.length > k.length && /^[A-ZА-Я]$/.test(gUp(k)))); if (!ks.length) continue; } }
+          const vs = ks.map(k => String(rule.e[k]));
           if (ks.some(k => gUp(k) === gUp(code)) || ks.length > 6 || /^Код|Материал|Индекс|Дизайн/.test(rule.l || '')) continue;
           /* списки индексов и материалов не показываем: индекс уже виден из кода */
           if (vs.filter(v => /индекс|материал|^\s*1[.,]\d+|Airium|Trivex|поликарбонат/i.test(v)).length * 2 >= vs.length) continue;
@@ -2009,7 +2097,7 @@ function lookup(codes){const seen=new Set(),res=[];
       }
     }
     const rows = [...add, ...codeRow, ...rest];
-    if (!rows.length || (rows.length < 2 && !add.length)) return '';
+    if (!rows.length || (rows.length < 2 && !add.length && codeTxt === 'код линзы')) return '';
     return `<div class="eg-rules"><div class="eg-rules-h">Правила</div>${rows.join('')}</div>`;
   }
   function init() {
@@ -2031,7 +2119,9 @@ function lookup(codes){const seen=new Set(),res=[];
     $('egCount').textContent = 'Загружаю базу…';
     const s = document.createElement('script');
     s.src = 'engravings/data.js';
-    s.onload = () => { const a = document.createElement('script'); a.src = 'engravings/alternatives.js'; a.onload = a.onerror = init; document.head.appendChild(a); };
+    /* публичная версия (gravirovki.html): без блока «наша альтернатива», правила рекомендаций не загружаем */
+    const ocPublic = !!document.querySelector('meta[name="oc-public"]');
+    s.onload = () => { if (ocPublic) { init(); return; } const a = document.createElement('script'); a.src = 'engravings/alternatives.js'; a.onload = a.onerror = init; document.head.appendChild(a); };
     s.onerror = () => { loaded = false; $('egCount').textContent = 'Не удалось загрузить базу гравировок.'; };
     document.head.appendChild(s);
   }
