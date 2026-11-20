@@ -237,7 +237,7 @@
   .eg-meta { font-size: 12px; color: #777; margin-top: 4px; line-height: 1.4; }
   .eg-src { font-size: 12px; margin-top: 10px; padding: 8px 10px; background: #fafaf8; border: 0.5px solid #e6e6e1; border-radius: 8px; }
   .eg-src-h { color: #999; margin-bottom: 2px; }
-  .eg-src-l { display: flex; gap: 4px 12px; flex-wrap: wrap; }
+  .eg-src-l { display: flex; flex-direction: column; align-items: flex-start; gap: 4px 12px; }
   .eg-src a { color: #185fa5; }
   .eg-rules { margin-top: 8px; font-size: 12px; line-height: 1.55; color: #555; }
   .eg-rules-h, .ls-rules-h { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #999; margin-bottom: 2px; }
@@ -2044,8 +2044,43 @@ function lookup(codes){const seen=new Set(),res=[];
     if (/^\(.*\)$/.test(t)) t = t.slice(1, -1).trim();
     return (t.match(/[a-zа-яё]/gi) || []).length < 3 ? '' : `<div class="eg-meta">${esc(t)}</div>`;
   }
+  function egSeikoCardRules(r, row, dec) {
+    if (r.brand !== 'Seiko' || /материал|схема|правил|расшифр|функцион/.test(r.kind || '')) return '';
+    const prefix = String(r.mark_code || '').split(/\s*\+\s*/)[0].split(' / ')[0].trim().toUpperCase();
+    const key = Object.keys(SK).sort((a, b) => b.length - a.length).find(k =>
+      prefix === k || SK_CANDS.some(x => x.k === k && x.code === prefix));
+    if (!key) return '';
+    const f = SK[key], rows = [];
+    rows.push(row(key, 'код продукта: Seiko ' + f.n + '; над темпоральной S'));
+    if (f.des) for (const [k, v] of Object.entries(f.des)) rows.push(row(k, 'дизайн: ' + v + '; после кода продукта'));
+    if (f.ins) for (const [k, v] of Object.entries(f.ins)) rows.push(row(k, 'инсет ' + v + ' мм; после кода продукта, над темпоральной S'));
+    if (f.corTop) rows.push(row(Object.keys(f.corTop).join(' / '), 'коридор: ' + Object.entries(f.corTop).map(([k,v]) => k + ' = ' + v + ' мм').join('; ') + '; после кода продукта, над темпоральной S'));
+    if (f.fixNote) rows.push(row(f.fixed, f.fixNote + '; в коде над темпоральной S'));
+    if (f.bc) rows.push(row('4 / 6 / 8', 'база BC4 / BC6 / BC8; после кода продукта'));
+    if (f.bot === 'none') rows.push(row('—', 'Однофокальная линза: ADD под темпоральной S не предусмотрена'));
+    else if (f.bot === 'ac' || f.bot === 'add2') {
+      rows.push(row('05 / 22 / 40', 'Примеры: ADD = 0.50 D / ADD = 2.25 D / ADD = 4.00 D; две цифры под темпоральной S'));
+      if (f.bot === 'ac') {
+        rows.push(row(Object.keys(f.cor).join(' / '), 'третья цифра под темпоральной S: коридор ' + Object.entries(f.cor).map(([k,v]) => k + ' = ' + v + ' мм').join('; ')));
+        const example = Object.prototype.hasOwnProperty.call(f.cor, '3') ? '3' : Object.keys(f.cor)[0];
+        rows.push(row('22' + example, 'Пример: ADD = 2.25 D, коридор ' + f.cor[example] + ' мм'));
+      } else rows.push(row('ADD', 'Только ADD, две цифры под темпоральной S; коридор читается из кода продукта над S'));
+    } else if (f.bot === 'type') rows.push(row('05 / 07 / 10 / 12', 'функциональная добавка 0,50 / 0,75 / 1,00 / 1,25 D под темпоральной S'));
+    else if (f.bot === 'pc') rows.push(row('105 / 155 / 205', 'дегрессия 1,0 / 1,5 / 2,0 D под темпоральной S; коридор 25 мм, без инсета'));
+    const shape = String(r.mark_code || '').match(/[◇□△▽]/);
+    const materials = shape && f.mat.includes(shape[0]) ? [shape[0]] : [...f.mat];
+    for (const sign of materials) rows.push(row(sign, 'индекс ' + SK_IDX[sign] + '; под назальной S'));
+    if (f.ntop === 'bc') rows.push(row('4 / 6 / 8', 'тип базы BC4 / BC6 / BC8 над назальной S'));
+    else if (f.ntop === 'pkd') rows.push(row('код', 'персональный код дизайна над назальной S'));
+    else rows.push(row('—', 'над назальной S у этой линейки гравировки нет'));
+    const decoded = dec && dec.length ? `<div class="eg-rules"><div class="eg-rules-h">Расшифровка введённого</div>${dec.join('')}</div>` : '';
+    return decoded + `<div class="eg-rules"><div class="eg-rules-h">Правила по каталогу</div>${rows.join('')}<div class="ls-note">Позиции указаны относительно носа и виска. При зеркальном чтении левая и правая стороны меняются местами вместе с метками. Примеры ADD не являются значением конкретной линзы.</div></div>`;
+  }
+
   function egRules(r) {
     const dec = egDecRows();
+    const seiko = egSeikoCardRules(r, (c, t) => `<div class="ls-rule"><code>${esc(c)}</code><span>${esc(t)}</span></div>`, dec);
+    if (seiko) return seiko;
     if (dec) return `<div class="eg-rules"><div class="eg-rules-h">Расшифровка</div>${dec.join('')}</div>`;
     if (/материал|схема|правил|расшифр|функцион/.test(r.kind) && !/дизайн/.test(r.kind)) return '';
     const prog = /прогрессив/.test(lsType(r.model, r.kind, r.brand));
