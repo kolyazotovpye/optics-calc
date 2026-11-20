@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O-calc</title>
+</head>
+<body>
+<script>
+/* Публичная версия калькулятора: та же index.html, но без блока рекомендаций.
+   Отдельной копии кода нет, поэтому версия всегда совпадает с основной. */
+(function () {
+  if (!location.hash) history.replaceState(null, '', '#engravings');
+  fetch('index.html', { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (h) {
+    h = h.replace(/<head>/i, '<head><meta name="oc-public" content="1">');
+    document.open(); document.write(h); document.close();
+  });
+})();
+</script>
+<noscript>Для работы калькулятора нужен JavaScript.</noscript>
+</body>
+</html>
