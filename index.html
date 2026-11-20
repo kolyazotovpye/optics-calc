@@ -1874,7 +1874,7 @@ function lookup(codes){const seen=new Set(),res=[];
     out.innerHTML = res.slice(0, 60).map(({ x }) => { const r = x.r; return `
       <div class="card eg-card"><div class="eg-row"><div class="eg-main">
         <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(egModel(r))}${egType(r)}</span>${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
-        ${r.crop ? '' : `<div class="eg-meta">${esc(r.mark_visual)}</div>`}
+        ${r.crop || r.brand === 'Essilor' ? '' : `<div class="eg-meta">${esc(r.mark_visual)}</div>`}
         ${egRules(r)}
         ${egPlace(r) ? `<button type="button" class="eg-sch-btn" data-i="${DATA.indexOf(r)}" aria-expanded="false">схема на линзе</button><div class="eg-sch-box" hidden></div>` : ''}
         <div class="eg-src">${egLinks(r)}</div>
@@ -1912,7 +1912,7 @@ function lookup(codes){const seen=new Set(),res=[];
     }
     const o = c && O[c]; if (!o) return '';
     const own = r.model.toLowerCase().includes(o.name.replace(/^(Hoyalux iD |Hoyalux )/, '').toLowerCase());
-    return `<div class="eg-alt"><div class="eg-rules-h">${own ? 'Это наш вариант · ' : ''}${esc(o.cat)}</div><img src="${esc('engravings/' + o.logo)}" alt="${esc(o.name)}" height="52"></div>`;
+    return `<div class="eg-alt"><div class="eg-rules-h">${esc(o.cat)}</div><img src="${esc('engravings/' + o.logo)}" alt="${esc(o.name)}" height="52"></div>`;
   }
   /* правила шифра для карточки (сейчас Ital Lenti): буква коридора и суффикс, без пересказа каталога */
   /* «Правила» в карточке: код линзы, ADD (только у прогрессивов), короткие списки суффиксов и знаков, шаблоны с примером.
