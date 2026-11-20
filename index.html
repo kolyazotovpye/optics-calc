@@ -286,6 +286,8 @@
   .ls-pop button:hover,.ls-pop button[aria-selected=true]{background:#e6eaf6}
   .ls-pop[data-for=lsX] button[data-v]:hover,.ls-pop[data-for=lsX] button[data-v][aria-selected=true]{background:#e6eaf6}
   .ls-pop[data-for=lsX] .sym{width:48px;flex:none}
+  .ls-pop[data-for=lsD1] .sym,.ls-pop[data-for=lsD2] .sym{width:64px;flex:none}
+  .ls-pop[data-for=lsD1] .sym img,.ls-pop[data-for=lsD2] .sym img{max-width:64px;height:24px!important;object-fit:contain}
   .ls-pop[data-for=lsX] .sym img{max-width:48px;object-fit:contain}
   .ls-pop .ls-other{display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:4px 8px;font-size:14px;color:var(--ink,#1a1a1a)}
   .ls-pop .ls-other-t{margin-right:6px}
@@ -1582,6 +1584,9 @@ function lookup(codes){const seen=new Set(),res=[];
       if(prefix)return x.r.kind==="дизайн"&&gUp(x.r.mark_code).startsWith(prefix[0]);
       return x.r.brand==="ODV";
     }
+    /* карточки разметочных карт ELO 2026: у каждой линейки своя карточка (Comfort Max Regular не тянет f-360 / Short / UltraShort) */
+    if(r.B.b==="Essilor"&&/ELO/.test(x.r.source)&&r.fam.p){const fn=norm(r.fam.n);
+      return norm(x.r.model)===fn||(/\(f-360 \/ regular \/ short\)/.test(fn)&&mn.startsWith("varilux physio extensee"));}
     const names=String(r.fam.m).replace(/ \(.*$/, "").split(" / ").map(norm);
     if(!names.some(n=>mn.includes(n)))return false;
     if(r.B.b==="Maxxee"&&F.nB)return compact(x.r.mark_code)===compact(F.nB);
@@ -1740,6 +1745,8 @@ function lookup(codes){const seen=new Set(),res=[];
         /* в доп. окне выбран бренд (HOYA, Rodenstock): знаки Essilor не предлагаем, окно для ручного ввода */
         if(c==="○"){if(lsXBrand())return;if(el.value.trim()&&!/^(\\ⓔ\/|ⓔ|☀ⓔ|\(ⓔ|◠○|M↓|≺HF)/.test(el.value.trim()))return;
           e.stopPropagation();lsPopOpen(el,LS_ESSYMS,v=>{el.value=v?v+" ":"";});return;}
+        if(c==="Sh"){const codes=lsShItems().map(i=>i[0]);if(el.value.trim()&&!codes.includes(el.value.trim()))return;
+          e.stopPropagation();lsPopOpen(el,lsShItems(),v=>{el.value=v;});return;}
         if(c!=="S")return;
         if(el.value.trim()&&!skShape(el.value)?.match(/[◇□△▽]/))return;
         e.stopPropagation();lsPopOpen(el,LS_IDXSYMS,v=>{el.value=v;});});}
@@ -1749,9 +1756,13 @@ function lookup(codes){const seen=new Set(),res=[];
     document.addEventListener("click",e=>{if(!e.target.closest("#lsPop"))lsPopClose();});
     document.addEventListener("keydown",e=>{if(e.key==="Escape")lsPopClose();});}
   const LS_SYMS=[["","нет знака"],["○","HOYA, Essilor, Nikon и др."],["S","Seiko"],["Z","ZEISS",'<span class="lslogo zlogo" role="img" aria-label="логотип ZEISS"></span>'],["Sh","Shamir",'<span class="lslogo shlogo" role="img" aria-label="старый логотип Shamir"></span>'],["Sh","Shamir",'<span class="lslogo shlogo2" role="img" aria-label="логотип Shamir"></span>'],["∞","Rodenstock"],["ves","Rodenstock",'<svg class="lsves" viewBox="0 0 24 12" width="22" height="11" aria-hidden="true"><path d="M2 6Q12-2 22 6Q12 14 2 6Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'],["◌","пунктирный круг (Rodenstock Progressiv)"],["▭","скруглённый прямоугольник (Rodenstock Nexyma, Progressiv PureLife)"],["dia","ромб (Rodenstock Progressiv life 2)","◇"],["rect","прямоугольник (Rodenstock Progressiv life XS)","▬"],["fdia","плоский ромб (Rodenstock Progressiv AT)","◊"],["oval","овал (Rodenstock Nexyma, 2009)","⬭"],["itl","Ital Lenti",'<span class="lslogo itlogo" role="img" aria-label="логотип Ital Lenti"></span>']]; /* круг ○ — HOYA, White Label, Lencor, Maxxee, ODV, BBGR, Nikon */ /* остальные знаки добавляются по мере разбора каталогов */
-  const LS_ESSYMS=[["","очистить / вписать код вручную"],["\\ⓔ/","между косыми: Xclusive, X track, X track 3D, X track 2","\\ⓔ/"],["ⓔ","в дуге: X 4D, X 3D, X 2, X Design","ⓔ"],
-    ["☀ⓔ","с лучами: Physio Extensee","☀ⓔ"],["(ⓔ","с дугой слева: Comfort Max","(ⓔ"],["ⓔ⌣","над дугами: Liberty 3.0","ⓔ⌣"],
-    ["◠○","«вайфай» над кружком: Eyezen","◠○"],["◠○λ","«вайфай» и λ: Eyezen lite","◠○λ"],["M↓+","M↓ +: Myopilux Plus","M↓+"],["≺HF","≺ HF: Essilor f-360°","≺HF"]];
+  const LS_ESSYMS=[["","очистить / вписать код вручную"],["\\ⓔ/","Xclusive, X track, X track 3D, X track 2","\\ⓔ/"],["ⓔ","X 4D, X 3D, X 2, X Design","ⓔ"],
+    ["☀ⓔ","Physio Extensee","☀ⓔ"],["(ⓔ","Comfort Max","(ⓔ"],["ⓔ⌣","Liberty 3.0","ⓔ⌣"],
+    ["◠○","Eyezen","◠○"],["◠○λ","Eyezen lite","◠○λ"],["M↓+","Myopilux Plus","M↓+"],["≺HF","Essilor f-360°","≺HF"]];
+  /* Shamir: список дизайнов для окна кода (как знаки Essilor), картинка из таблицы гравировок каталога */
+  function lsShItems(){const B=GBR.find(b=>b.b==="Shamir");if(!B)return [];
+    const img=c=>{const r=DATA.find(r=>r.brand==="Shamir"&&r.mark_code===c&&r.crop);return r?"engravings/"+r.crop:"";};
+    return [["","очистить / вписать код вручную"],...B.fams.map(f=>{const c=f.f.nB[0].px;return [c,f.m,"",img(c)];})];}
   const LS_OTHER=new Set(["◌","▭","dia","rect","fdia","oval"]);
   /* дополнительное окно над левым верхним: редкие знаки, которые не стоят в центре схемы */
   const LS_XSK=[["S и косая 7 с чертой слева","AZ"],["S в круге с завитком (Ⓢ)","AZ"],["S в угловых скобках <S>","AZ"],["S и косая 7 тонкой линией","AS"],
