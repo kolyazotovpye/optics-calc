@@ -1913,7 +1913,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if (!res.length) { out.innerHTML = '<div class="eg-empty">Не найдено в каталогах. Проверьте написание кода или опишите знак другими словами.</div>'; return; }
     out.innerHTML = res.slice(0, 60).map(({ x }) => { const r = x.r; return `
       <div class="card eg-card"><div class="eg-row"><div class="eg-main">
-        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(egModel(r))}${egType(r)}</span>${isOldSeiko(r.brand, r.model) ? '<span class="eg-code" title="Архивная модель">old</span>' : ''}${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
+        <div class="eg-top"><span class="eg-model">${esc(r.brand)} · ${esc(egModel(r))}${egType(r)}</span>${r.old ? '<span class="eg-code" title="Вариант из прежнего каталога. В проверенных каталогах 2022–2026 годов не найден в ассортименте.">old</span>' : ''}${r.mark_code && r.mark_code.length <= 14 && !/^\(.*\)$/.test(r.mark_code) ? `<span class="eg-code">${esc(r.mark_code)}</span>` : ''}</div>
         ${r.crop || r.brand === 'Essilor' ? '' : egMeta(r)}
         ${egRules(r)}
         ${egPlace(r) ? `<button type="button" class="eg-sch-btn" data-i="${DATA.indexOf(r)}" aria-expanded="false">схема на линзе</button><div class="eg-sch-box" hidden></div>` : ''}
@@ -2171,7 +2171,7 @@ function lookup(codes){const seen=new Set(),res=[];
     if (loaded) return; loaded = true;
     $('egCount').textContent = 'Загружаю базу…';
     const s = document.createElement('script');
-    s.src = 'engravings/data.js';
+    s.src = 'engravings/data.js?v=20261123-old';
     /* публичная версия (gravirovki.html): без блока «наша альтернатива», правила рекомендаций не загружаем */
     const ocPublic = !!document.querySelector('meta[name="oc-public"]');
     s.onload = () => { if (ocPublic) { init(); return; } const a = document.createElement('script'); a.src = 'engravings/alternatives.js'; a.onload = a.onerror = init; document.head.appendChild(a); };
