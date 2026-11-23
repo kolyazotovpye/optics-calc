@@ -2021,9 +2021,15 @@ function lookup(codes){const seen=new Set(),res=[];
     const example = myself || egLifeStyle4(r);
     if (myself) P.F.tT = '305';
     if (example) P.F.tB = '22F';
+    let note = example ? (myself ? '305 и 22F приведены для примера.' : '22F показано для примера.') + ' На линзе значение зависит от заказа.' : '';
+    if (r.brand === 'Seiko' && SK[P.F.tT]?.bot === 'type') {
+      P.F.tT += '25';
+      P.F.tB = '07';
+      note = 'Пример из каталога. 25 означает инсет 2,5 мм, 07 — тип с функциональной добавкой 0,75 дптр.';
+    }
     const v = k => P.F[k] ? `<span class="eg-sv">${esc(P.F[k])}</span>` : '<span class="eg-sv eg-sv0"></span>';
     const side = (t, b, lbl, top) => `<div class="eg-ss"><div class="eg-sl">${lbl}</div>${top !== undefined ? `<div class="eg-sx">${top}</div>` : ''}${v(t)}<div class="eg-sm"><i></i><span class="eg-sc">${sd}</span><i></i></div>${v(b)}</div>`;
-    return `<div class="eg-sch">${side('nT', 'nB', 'назально', xd ? `<span class="eg-sv">${xd}</span>` : '')}<div class="eg-scross">+</div>${side('tT', 'tB', 'темпорально')}</div>${example ? '<div class="ls-note">' + (myself ? '305 и 22F приведены для примера.' : '22F показано для примера.') + ' На линзе значение зависит от заказа.</div>' : ''}`;
+    return `<div class="eg-sch">${side('nT', 'nB', 'назально', xd ? `<span class="eg-sv">${xd}</span>` : '')}<div class="eg-scross">+</div>${side('tT', 'tB', 'темпорально')}</div>${note ? '<div class="ls-note">' + esc(note) + '</div>' : ''}`;
   }
   function egFam(r) {
     const mn = norm(r.model); let best = null, len = 0;
