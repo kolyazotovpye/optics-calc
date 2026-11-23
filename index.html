@@ -265,6 +265,7 @@
   .eg-sl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#999}
   .eg-sx img,.eg-sx svg{height:16px;width:auto;display:block}
   .eg-sv{min-width:44px;min-height:20px;padding:1px 6px;box-sizing:border-box;text-align:center;font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#e6eaf6;border-radius:4px;display:flex;align-items:center;justify-content:center}
+  .eg-original{font-size:13px;margin-top:8px}.eg-original summary{cursor:pointer}.eg-original[open] div{margin-top:5px}
   .eg-sv0{background:transparent;border:1px dashed #d7dbe8}
   .eg-sm{display:flex;align-items:center;gap:4px}.eg-sm i{display:block;width:22px;height:1.5px;background:currentColor}
   .eg-sc{min-width:22px;min-height:22px;border:1px solid currentColor;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px}
@@ -1917,11 +1918,18 @@ function lookup(codes){const seen=new Set(),res=[];
         ${r.crop || r.brand === 'Essilor' ? '' : egMeta(r)}
         ${egRules(r)}
         ${egPlace(r) ? `<button type="button" class="eg-sch-btn" data-i="${DATA.indexOf(r)}" aria-expanded="false">схема на линзе</button><div class="eg-sch-box" hidden></div>` : ''}
+        ${egSourceDetail(r)}
         <div class="eg-src">${egLinks(r)}</div>
       </div><div class="eg-side">${r.crop ? `<img class="eg-crop" src="${esc('engravings/' + r.crop)}"${/@2x\./.test(r.crop) ? ` data-max="${r.crop_max || 40}" onload="this.style.width=(this.naturalWidth/2)*Math.min(1,this.dataset.max/(this.naturalHeight/2))+'px'"` : ''} alt="Гравировка: ${esc(r.model)}" loading="lazy">` : ''}${egAlt(r)}</div></div>
       </div>`; }).join('') + (res.length > 60 ? '<div class="eg-count">Показаны первые 60, уточните запрос.</div>' : '');
   }
   /* ссылки карточки: страница продукта, разметочная карта, таблица гравировок (если гравировка описана на отдельной странице) */
+  function egSourceDetail(r) {
+    const fields = [['Код', r.mark_code], ['Описание', r.mark_visual], ['Расположение', r.where]];
+    const lines = fields.filter(([, value]) => value).map(([label, value]) =>
+      '<div><strong>' + label + '</strong> · ' + esc(value) + '</div>');
+    return lines.length ? '<details class="eg-original"><summary>Описание гравировки из базы</summary>' + lines.join('') + '</details>' : '';
+  }
   function egLinks(r) {
     const src = r.source.replace(/\.pdf$/, ''), prod = r.prod || [], card = r.card || [];
     const lk = (p, img, label) => `<a href="#" data-img="${esc('engravings/' + img)}" data-cap="${esc(src + ', стр. ' + p + ' · ' + label)}">${esc(label)}, стр. ${p}</a>`;
@@ -1970,6 +1978,11 @@ function lookup(codes){const seen=new Set(),res=[];
     let code = String(r.mark_code || '').trim();
     if (/^\(.*\)$/.test(code) && !/\(–\)/.test(code)) code = '';
     code = code.replace(/^(\S*?[^\d\s])\s*(\d)((?:\/\d)+)$/, '$1 $2').replace(/^(\S+?\d)\s*(\d)((?:\/\d)+)$/, '$1 $2');
+    if (r.brand === 'Rodenstock White Label' && r.kind === 'правила гравировки') {
+      const family = egFamB(r);
+      if (family) return { c: family.B.c, x, F };
+      if (r.mark_visual === 'только горизонталь ○ (функциональные гравировки)') return { c: '○', x, F };
+    }
     if (/материал|схема|правил|расшифр|функцион/.test(r.kind) && !/дизайн/.test(r.kind)) return null;
     if (r.brand === 'HOYA') {
       /* бифокал TrueForm: (–), цифра материала и TF стоят вместе в окне над линией */
@@ -1984,6 +1997,13 @@ function lookup(codes){const seen=new Set(),res=[];
       const m = code.match(/^(.+?)\s*\+\s*([◇□△▽])$/);
       if (m) { F.tT = m[1].split(' / ')[0].trim(); F.nB = m[2]; } else if (code) F.tT = code.split(' / ')[0]; else return null;
       return { c: 'S', x, F };
+    }
+    if (r.brand === 'ODV') {
+      const pair = code.match(/^([A-Z0-9]+)\s*\+\s*(\d{2,3})(\d{2})$/);
+      if (pair && gTok(OD_CODE, pair[1], false)?.full && OD_B[pair[2]] && OD_I[pair[3]]) {
+        F.tB = pair[1]; F.nB = pair[2] + pair[3];
+        return { c: '○', x, F };
+      }
     }
     const fb = egFamB(r); if (!fb) return null;
     c = fb.B.c; const f = fb.f.f;
@@ -2027,7 +2047,28 @@ function lookup(codes){const seen=new Set(),res=[];
       P.F.tB = '07';
       note = 'Пример из каталога. 25 означает инсет 2,5 мм, 07 — тип с функциональной добавкой 0,75 дптр.';
     }
-    const v = k => P.F[k] ? `<span class="eg-sv">${esc(P.F[k])}</span>` : '<span class="eg-sv eg-sv0"></span>';
+    const hints = {};
+    if (r.brand === 'HOYA') {
+      const h = hyParse(P.F.nB);
+      if (h) {
+        if (h.f.top === 'eg') hints.nT = 'EG';
+        hints.tT = {prof:'Профиль', design:'Код дизайна', ws3:'Дизайн и коридор', wsb:'Тип и коридор', dt:'Тип'}[h.f.top];
+        if (h.f.top === 'dt' && /Room 400/i.test(r.model)) hints.tT = '';
+        hints.tB = {sync:'5 / 9 / 13', dl:'7 / 15', dt:'Аддидация', none:''}[h.f.bot] ?? 'Аддидация';
+      }
+    } else if (r.brand === 'Seiko' && !r.old && r.source.includes('2026')) {
+      const f = SK[P.F.tT] || SK_CANDS.find(item => item.code === P.F.tT)?.f;
+      if (f) {
+        hints.nT = {bc:'База', pkd:'Код дизайна'}[f.ntop];
+        hints.tB = {ac:'ADD и коридор', add2:'ADD', pc:'Дегрессия', type:'Тип'}[f.bot];
+      }
+    } else {
+      const family = egFamB(r);
+      if (family) for (const [key, rules] of Object.entries(family.f.f)) {
+        if (Array.isArray(rules)) hints[key] = rules.map(rule => rule.l || (rule.add ? 'ADD' : '')).filter(Boolean).join(' · ');
+      }
+    }
+    const v = k => P.F[k] ? `<span class="eg-sv">${esc(P.F[k])}</span>` : '<span class="eg-sv eg-sv0">' + esc(hints[k] || '') + '</span>';
     const side = (t, b, lbl, top) => `<div class="eg-ss"><div class="eg-sl">${lbl}</div>${top !== undefined ? `<div class="eg-sx">${top}</div>` : ''}${v(t)}<div class="eg-sm"><i></i><span class="eg-sc">${sd}</span><i></i></div>${v(b)}</div>`;
     return `<div class="eg-sch">${side('nT', 'nB', 'назально', xd ? `<span class="eg-sv">${xd}</span>` : '')}<div class="eg-scross">+</div>${side('tT', 'tB', 'темпорально')}</div>${note ? '<div class="ls-note">' + esc(note) + '</div>' : ''}`;
   }
