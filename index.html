@@ -2000,6 +2000,9 @@ function lookup(codes){const seen=new Set(),res=[];
     return { c, x, F };
   }
   /* маленькая схема линзы: назальная сторона слева, темпоральная справа, как в окнах поиска */
+  function egLifeStyle4(r) {
+    return r.brand === 'HOYA' && /^Hoyalux iD LifeStyle 4i?\b/i.test(r.model);
+  }
   function egSchema(r) {
     const P = egPlace(r); if (!P) return '';
     const sym = LS_SYMS.find(v => v[0] === P.c), sd = P.c ? (sym && sym[2] ? sym[2] : esc(P.c)) : '';
@@ -2008,9 +2011,11 @@ function lookup(codes){const seen=new Set(),res=[];
     else if (P.x.startsWith('sk:')) { const it = lsXItems().find(i => i[0] === P.x); xd = it && it[3] ? `<img src="${esc(it[3])}" alt="">` : ''; }
     else if (P.x) xd = esc(P.x);
     if (P.x.startsWith('(–)')) xd = esc(P.x);
+    const example = egLifeStyle4(r);
+    if (example) P.F.tB = '22F';
     const v = k => P.F[k] ? `<span class="eg-sv">${esc(P.F[k])}</span>` : '<span class="eg-sv eg-sv0"></span>';
     const side = (t, b, lbl, top) => `<div class="eg-ss"><div class="eg-sl">${lbl}</div>${top !== undefined ? `<div class="eg-sx">${top}</div>` : ''}${v(t)}<div class="eg-sm"><i></i><span class="eg-sc">${sd}</span><i></i></div>${v(b)}</div>`;
-    return `<div class="eg-sch">${side('nT', 'nB', 'назально', xd ? `<span class="eg-sv">${xd}</span>` : '')}<div class="eg-scross">+</div>${side('tT', 'tB', 'темпорально')}</div>`;
+    return `<div class="eg-sch">${side('nT', 'nB', 'назально', xd ? `<span class="eg-sv">${xd}</span>` : '')}<div class="eg-scross">+</div>${side('tT', 'tB', 'темпорально')}</div>${example ? '<div class="ls-note">22F показано для примера. На линзе значение зависит от заказа.</div>' : ''}`;
   }
   function egFam(r) {
     const mn = norm(r.model); let best = null, len = 0;
@@ -2081,6 +2086,10 @@ function lookup(codes){const seen=new Set(),res=[];
     const dec = egDecRows();
     const seiko = egSeikoCardRules(r, (c, t) => `<div class="ls-rule"><code>${esc(c)}</code><span>${esc(t)}</span></div>`, dec);
     if (seiko) return seiko;
+    if (egLifeStyle4(r)) {
+      const decoded = dec ? '<div class="eg-rules"><div class="eg-rules-h">Расшифровка введённого</div>' + dec.join('') + '</div>' : '';
+      return decoded + '<div class="eg-rules"><div class="eg-rules-h">Под темпоральным кругом</div><div class="ls-rule"><code>22F</code><span>Пример. Первые две цифры обозначают аддидацию (22 = +2,25 дптр). Буква обозначает метод подбора.</span></div><div class="ls-rule"><code>F</code><span>Добавочная линза перед коррекцией для дали</span></div><div class="ls-rule"><code>B</code><span>Добавочная линза за коррекцией для дали</span></div><div class="ls-rule"><code>W</code><span>Фороптер или суммарная линза в пробной оправе</span></div></div>';
+    }
     if (dec) return `<div class="eg-rules"><div class="eg-rules-h">Расшифровка</div>${dec.join('')}</div>`;
     if (/материал|схема|правил|расшифр|функцион/.test(r.kind) && !/дизайн/.test(r.kind)) return '';
     const prog = /прогрессив/.test(lsType(r.model, r.kind, r.brand));
