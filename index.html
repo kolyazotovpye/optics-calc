@@ -1250,6 +1250,8 @@ function lookup(codes){const seen=new Set(),res=[];
     if(last&&rule.px){const P=gUp(rule.px),u=gUp(t);if(P.startsWith(u)||(u.startsWith(P)&&/^\d$/.test(u.slice(P.length))))return {full:0};return null;}
     if(last&&rule.pre&&rule.pre.test(t))return {full:0};return null;}
   function gField(spec,val){let toks=String(val||"").trim().split(/[\s,;]+/).filter(Boolean);
+    /* аддидация бывает выгравирована с пробелом: «2 5» = 25 = 2,50 (Essilor X 4D, разметочная карта) */
+    if(spec&&spec.some(r=>r&&r.add)){const m=[];for(let i=0;i<toks.length;i++){if(/^\d$/.test(toks[i])&&/^\d$/.test(toks[i+1]||"")&&toks.length===2){m.push(toks[i]+toks[i+1]);i++;}else m.push(toks[i]);}toks=m;}
     if(spec&&spec[0]&&spec[0].join&&toks.length)toks=[toks.join("")];
     if(!toks.length)return {ok:1,full:spec&&spec.req?0:1,lines:[]};
     if(!spec)return null;
@@ -1654,6 +1656,8 @@ function lookup(codes){const seen=new Set(),res=[];
     else if(/Myopilux|MiYOSMART|Stellest|MyoCare|Myopica/i.test(n))t.push("контроль миопии");
     else if(/Office|Officelens|Extesa|WorkStyle|WorkSmart|Computer|WorkSpace|Ergo|Home ?& ?(Office|Work)|Online Wide|Soltes|Digitime|Indoor|Desk|Officient|\bRoom\b|Work Progressive|SUPEREADER|SoftWear|Start 0/i.test(n))t.push("офисная");
     else if(/Relax|\bSync|Eyezen|Digital Lens|ZEISS Digital|SmartZoom|Pulseo|Acomoda|PowerUp|Mono\+|MonoPlus|Nulux Active/i.test(n)||(brand==="ZEISS"&&/^Digital/i.test(n)))t.push("поддержка аккомодации");
+    /* Seiko: I Xceed и Drive без X — однофокальные (каталог Seiko 2026, стр. 24 и 110), Drive X — прогрессив */
+    else if(brand==="Seiko"&&/I Xceed|\bDrive(?! X)\b/i.test(n))t.push("монофокал");
     else if(/монофокальн/i.test(kind)||/Single Vision|Smart Attitude|Attitude III SV|S\/V|\bSV\b|однофокальн|монофокальн|\bSPH\b|Nulux|Hilux|Aspheo|Unor|\bLite\b|Myopsee|Infinite|ClearView|Cosmolit|Perfalit|\bMono\b|Hyperop|Sportstech|сферика\)|NL-SP|Viewfit|Curved(?! ?X)/i.test(n))t.push("монофокал");
     else if(isOldSeiko(brand,n)||/прогрессивн/i.test(kind)||/Progressiv|Progressive|\bPAL\b|Presio|SeeMax|Varilux|Hoyalux|Autograph|Attitude III|Genesis|Spectrum|Urban|Impression|Multigressiv|Twice|Premium|\bSky\b|FreeLine|Balance|Prime|Emblem|Synergy|Vision X|Brilliance|Superior|Xceed|Light 2|SmartLife|DigiLife|Selectal|Sentoris|Camber|Multifocal|\bPLT|Navigator|Signia|Kodak|Unique|Intro|\bEasy|Precise|Concise|Liberty|Comfort|Physio|Millennium|EnRoute|Drive|Road Pilot|Curved X|Nexyma|\blife\b|Essentials|Ideal|Omega|Xcel|VSX|\bWing\b/i.test(n))t.push("прогрессив");
     if(!t.length)return "";
@@ -2157,7 +2161,11 @@ function lookup(codes){const seen=new Set(),res=[];
     if (code) { const fc = egFam(r), cc = gUp(code).replace(/\s+/g, '');
       for (const rule of Object.values((fc && fc.f) || {}).flat()) if (rule && rule.e && !rule.add) {
         const k = Object.keys(rule.e).find(k => gUp(k).replace(/\s+/g, '') === cc); if (k) { codeTxt = String(rule.e[k]).replace(/^\S+ — /, ''); break; } } }
-    const codeRow = code ? [row(code, codeTxt)] : [];
+    let codeRow = code ? [row(code, codeTxt)] : [];
+    /* составной код HOYA раскладываем на части: «WS37» = линейка + материал (Seiko раскладывает egSeikoCardRules) */
+    if (r.brand === 'HOYA') { const t = code.split(/\s+/), h = hyParse(t[0]);
+      if (h) { codeRow = [row(h.k, 'линейка: HOYA ' + lsNT(h.f.n))]; if (h.cor) codeRow.push(row(h.cor, 'коридор ' + (10 + +h.cor) + ' мм')); if (HY_MAT[h.mat]) codeRow.push(row(h.mat, 'материал: ' + HY_MAT[h.mat]));
+        if (h.suf && h.f.suf === 'OUI') codeRow.push(row(h.suf, { O: 'Outdoor', U: 'Urban', I: 'Indoor' }[h.suf])); codeTxt = 'разложен'; } }
     if (r.brand === 'HOYA' || r.brand === 'Seiko') {
       if (prog) { const t = egToks().find(t => /^\d{2}$/.test(t) && +t[0] >= 0 && +t[0] <= 4 && /[0257]/.test(t[1])); const m = t && ADD2.re.exec(t), v = m && ADD2.d(m);
         add.push(v ? row(t, egAddTxt(v)) : row('22', 'ADD = 2.25')); }
